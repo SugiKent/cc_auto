@@ -3,7 +3,6 @@ class TopController < ApplicationController
     Currency.get_rates
 
     trans = Transaction.new
-    binding.pry
     if Rails.env == 'development'
       trans.sell_buy_coin
     end
