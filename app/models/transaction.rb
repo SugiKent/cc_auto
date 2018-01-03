@@ -99,6 +99,7 @@ class Transaction < ApplicationRecord
 
       if now_rate['rate'].to_i > 2000000
         # 200万円を超えている場合は買わない
+        return false
       else
         now_rate['rate'].to_i < bitcoins_avg && now_rate['rate'].to_i < past_trans.rate - 1000
       end
