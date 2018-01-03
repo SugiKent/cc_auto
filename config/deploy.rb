@@ -58,7 +58,7 @@
 # end
 
 # config valid only for current version of Capistrano
-lock "3.2.1"
+lock "3.10.1"
 
 set :application, "cc_auto"
 set :repo_url, "git@github.com:SugiKent/cc_auto.git"
