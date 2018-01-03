@@ -25,6 +25,9 @@ class Transaction < ApplicationRecord
   def sell_buy_coin
     key = ENV['CC_API_KEY']
     secret = ENV['CC_API_SECRET']
+
+    binding.pry
+
     # 取引を実行するかどうか
     # check_rateの結果がfalseのtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
@@ -52,7 +55,7 @@ class Transaction < ApplicationRecord
     puts "POSTでの#{order_type}を開始"
     request_for_post(uri, headers, body)
 
-    trans = Transaction.new(type: 0, amount: amount, rate: rate, order_type: order_type)
+    trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
     trans.save
     puts "POSTでの#{order_type}を完了"
 

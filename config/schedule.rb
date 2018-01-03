@@ -14,5 +14,5 @@ job_type :custom_runner, "export PATH=\"$HOME/.rbenv/bin:$PATH\"; eval \"$(rbenv
 every 1.minute do
   custom_runner "Currency.get_rates"
   custom_runner "Bitcoin.get_rate"
-  custom_runner "Transaction.new.sell_buy_coin"
+  # custom_runner "Transaction.new.sell_buy_coin"
 end
