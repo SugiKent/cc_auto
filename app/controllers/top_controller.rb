@@ -27,7 +27,7 @@ class TopController < ApplicationController
     Currency.get_rates
 
     trans = Transaction.new
-    trans.sell_buy_coin
+    # trans.sell_buy_coin
 
     # Currency.calc_rates
   end
