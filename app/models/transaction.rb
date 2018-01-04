@@ -150,6 +150,16 @@ class Transaction < ApplicationRecord
     end
   end
 
+  # 取引履歴を取得します。
+  def read_transactions
+    key = ENV['CC_API_KEY']
+    secret = ENV['CC_API_SECRET']
+
+    uri = URI.parse "https://coincheck.com/api/exchange/orders/transactions"
+    headers = get_signature(uri, key, secret)
+    request_for_get(uri, headers)
+  end
+
   private
 
   def http_request(uri, request)
@@ -163,6 +173,8 @@ class Transaction < ApplicationRecord
 
     p response
 
+    response
+
   end
 
   def get_signature(uri, key, secret, body = "")
@@ -174,6 +186,11 @@ class Transaction < ApplicationRecord
       "ACCESS-NONCE" => nonce,
       "ACCESS-SIGNATURE" => signature
     }
+  end
+
+  def request_for_get(uri, headers = {})
+    request = Net::HTTP::Get.new(uri.request_uri, initheader = custom_header(headers))
+    http_request(uri, request)
   end
 
   def request_for_post(uri, headers, body)

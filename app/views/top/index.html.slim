@@ -1,2 +1,18 @@
 h1
   | CC おーと
+
+- all_jpys = 0
+- today_jpys = []
+- @transactions['transactions'].each do |trans|
+  - all_jpys += trans['funds']['jpy'].to_i
+  / 今日の取引だけを追加
+  - today_jpys << trans['funds']['jpy'].to_i if DateTime.parse(trans["created_at"]) > Date.today
+
+h2
+  | 今日の利益
+= today_jpys.sum
+
+h2
+  | 最近の利益
+
+= all_jpys
