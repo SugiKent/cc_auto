@@ -87,7 +87,6 @@ Rails.application.configure do
   end
 
   config.logger = Logger.new("log/production.log", 5, 10.megabytes)
-  config.logger = Logger.new("log/cron.log", 5, 10.megabytes)
 
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
