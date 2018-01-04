@@ -26,6 +26,10 @@ class Transaction < ApplicationRecord
     key = ENV['CC_API_KEY']
     secret = ENV['CC_API_SECRET']
 
+    # .envのTRANS_ON環境変数で取引するかを切り替える
+    trans_on = ENV['TRANS_ON']
+    return false unless trans_on == 'go'
+
     # 取引を実行するかどうか
     # check_rateの結果がtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
@@ -36,12 +40,14 @@ class Transaction < ApplicationRecord
     if Transaction.last.order_type == 'buy'
       # 売る場合
       order_type = 'sell'
+      rate = get_rate(order_type)
 
       # 相場より10000円あげた指値で売る
       price = rate['rate'].to_i + 10000
     else
       # 買う場合
       order_type = 'buy'
+      rate = get_rate(order_type)
 
       # 相場より10000円下げた指値で買う
       price = rate['rate'].to_i - 10000
@@ -63,11 +69,11 @@ class Transaction < ApplicationRecord
     headers = get_signature(uri, key, secret, body.to_json)
     if Rails.env == 'production'
       puts "POSTでの#{order_type}を開始"
-      # request_for_post(uri, headers, body)
+      request_for_post(uri, headers, body)
 
       # amountがFloat型のためデータ登録できず
       trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
-      # trans.save
+      trans.save
       puts "POSTでの#{order_type}を完了"
     else
       puts '開発環境のため売買行わず'
