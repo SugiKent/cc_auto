@@ -137,7 +137,8 @@ class Transaction < ApplicationRecord
         before_2m_bitcoin = Bitcoin.find(last_bitcoin_id - 2)
         before_5m_bitcoin = Bitcoin.find(last_bitcoin_id - 10)
         puts "2分前の購入レートは#{before_2m_bitcoin.rate}円\n5分前の購入レートは#{before_5m_bitcoin.rate}円"
-        # 2分前のレートより高かったら買う
+
+        # 5分前 < 2分前 < 現在と上昇していたら買う
         which = now_rate['rate'].to_i > before_2m_bitcoin.rate && before_2m_bitcoin.rate > before_5m_bitcoin.rate
 
         # 前回の[売却]よりも1.5万円レートが下がっていたら、買う
