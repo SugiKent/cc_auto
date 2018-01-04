@@ -38,14 +38,14 @@ class Transaction < ApplicationRecord
       # 売る場合
       order_type = 'sell'
 
-      # 相場より300円あげた指値で売る
-      price = rate['rate'].to_i + 300
+      # 相場より10000円あげた指値で売る
+      price = rate['rate'].to_i + 10000
     else
       # 買う場合
       order_type = 'buy'
 
-      # 相場より300円下げた指値で買う
-      price = rate['rate'].to_i - 300
+      # 相場より10000円下げた指値で買う
+      price = rate['rate'].to_i - 10000
     end
 
     body = {
