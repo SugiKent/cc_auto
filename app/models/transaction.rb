@@ -30,7 +30,7 @@ class Transaction < ApplicationRecord
     # check_rateの結果がfalseのtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
 
-    amount = 0.005
+    amount = 0.01
     rate = get_rate(order_type)
 
     # 最後の取引が"買い"なら、"売る"
