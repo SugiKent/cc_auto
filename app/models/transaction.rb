@@ -73,7 +73,7 @@ class Transaction < ApplicationRecord
   end
 
   def check_rate
-    puts Time.zone.now.to_s + '  Transaction#check_rateを実行'
+    puts "\n\n------------------------\n" + Time.zone.now.to_s + "\nTransaction#check_rateを実行"
     past_trans = Transaction.last
 
     puts "最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円"
@@ -113,7 +113,7 @@ class Transaction < ApplicationRecord
         puts '200万円を超えているため、購入を見送りました。'
         return false
       else
-        which = now_rate['rate'].to_i < bitcoins_avg && now_rate['rate'].to_i < past_trans.rate - 2000
+        which = now_rate['rate'].to_i < bitcoins_avg + 1000 && now_rate['rate'].to_i < past_trans.rate - 2000
         puts "判定の結果：#{which}"
         which
       end
