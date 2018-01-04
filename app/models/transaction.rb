@@ -81,6 +81,15 @@ class Transaction < ApplicationRecord
     result
   end
 
+  def get_ticker
+    # 1BTC当たりのorder_typeのレートを取得する
+    uri = URI.parse "https://coincheck.com/api/ticker"
+    json = Net::HTTP.get(uri)
+    result = JSON.parse(json)
+
+    result
+  end
+
   def check_rate
     puts "\n\n------------------------\n" + Time.zone.now.to_s + "\nTransaction#check_rateを実行"
     past_trans = Transaction.last
