@@ -31,7 +31,6 @@ class Transaction < ApplicationRecord
     return false unless check_rate
 
     amount = 0.01
-    rate = get_rate(order_type)
 
     # 最後の取引が"買い"なら、"売る"
     if Transaction.last.order_type == 'buy'
@@ -48,6 +47,9 @@ class Transaction < ApplicationRecord
       price = rate['rate'].to_i - 10000
     end
 
+    # order_typeを元にレートを取得
+    rate = get_rate(order_type)
+
     body = {
       rate: price,
       amount: amount,
@@ -61,10 +63,11 @@ class Transaction < ApplicationRecord
     headers = get_signature(uri, key, secret, body.to_json)
     if Rails.env == 'production'
       puts "POSTでの#{order_type}を開始"
-      # request_for_post(uri, headers, body)
+      request_for_post(uri, headers, body)
 
+      # amountがFloat型のためデータ登録できず
       trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
-      # trans.save
+      trans.save
       puts "POSTでの#{order_type}を完了"
     else
       puts '開発環境のため売買行わず'
