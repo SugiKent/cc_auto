@@ -82,7 +82,7 @@ class Transaction < ApplicationRecord
       bitcoins = Bitcoin.where(order_type: 'sell').limit(1000)
       bitcoins_avg = bitcoins.pluck(:rate).inject(0.0){|r,i| r+=i } / bitcoins.size
 
-      now_rate['rate'].to_i > bitcoins_avg && now_rate['rate'].to_i > past_trans.rate + 1000
+      now_rate['rate'].to_i > bitcoins_avg || now_rate['rate'].to_i > past_trans.rate + 2000
     elsif past_trans.order_type == 'sell'
       # 前回は売った = 今回は買う
       # 前回のrateよりも、5000円now_rateが低ければ買う
@@ -99,7 +99,7 @@ class Transaction < ApplicationRecord
         # 200万円を超えている場合は買わない
         return false
       else
-        now_rate['rate'].to_i < bitcoins_avg && now_rate['rate'].to_i < past_trans.rate - 1000
+        now_rate['rate'].to_i < bitcoins_avg || now_rate['rate'].to_i < past_trans.rate - 2000
       end
     end
   end
