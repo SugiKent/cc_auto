@@ -26,8 +26,6 @@ class Transaction < ApplicationRecord
     key = ENV['CC_API_KEY']
     secret = ENV['CC_API_SECRET']
 
-    binding.pry
-
     # 取引を実行するかどうか
     # check_rateの結果がfalseのtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
