@@ -102,7 +102,6 @@ class Transaction < ApplicationRecord
   def check_rate
     puts "\n\n------------------------\n" + Time.zone.now.to_s + "\nTransaction#check_rateを実行"
     past_trans = Transaction.last
-
     puts "最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円"
 
     if past_trans.order_type == 'buy'
@@ -129,8 +128,14 @@ class Transaction < ApplicationRecord
         puts '200万円を超えているため、購入を見送りました。'
         return false
       else
+        last_bitcoin = Bitcoin.find(Bitcoin.where(order_type: 'buy').last.id - 6)
+        puts "6分前の購入レートは#{last_bitcoin.rate}円"
+        # 6分前のレートより低かったら買う
+        which = now_rate['rate'].to_i < last_bitcoin.rate
+
         # 前回の[売却]よりも1.5万円レートが下がっていたら、買う
-        which = now_rate['rate'].to_i < past_trans.rate
+        # which = now_rate['rate'].to_i < past_trans.rate
+
         puts "判定の結果：購入は#{which}"
         which
       end
