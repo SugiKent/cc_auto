@@ -134,7 +134,7 @@ class Transaction < ApplicationRecord
         return false
       else
         last_bitcoin = Bitcoin.find(Bitcoin.where(order_type: 'buy').last.id - 2)
-        puts "6分前の購入レートは#{last_bitcoin.rate}円"
+        puts "2分前の購入レートは#{last_bitcoin.rate}円"
         # 2分前のレートより高かったら買う
         which = now_rate['rate'].to_i > last_bitcoin.rate
 
