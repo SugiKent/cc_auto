@@ -27,7 +27,7 @@ class Transaction < ApplicationRecord
     secret = ENV['CC_API_SECRET']
 
     # 取引を実行するかどうか
-    # check_rateの結果がfalseのtrueでない限り、取引を実行せずにreturn falseする
+    # check_rateの結果がtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
 
     amount = 0.01
@@ -89,48 +89,29 @@ class Transaction < ApplicationRecord
 
     if past_trans.order_type == 'buy'
       # 前回は買った = 今回は売る
-      # 前回のrateよりも、3000円now_rateが高ければ売る
 
       # 現在の売値レート
       now_rate = get_rate('sell')
 
-      # 過去1000分のデータからの平均値
-      bitcoins = Bitcoin.where(order_type: 'sell').limit(1000)
-      bitcoins_avg = bitcoins.pluck(:rate).inject(0.0){|r,i| r+=i } / bitcoins.size
+      puts "現在のレートは#{now_rate['rate']}円"
 
-      puts "過去のbtcの平均値は、#{bitcoins_avg}円\n現在のレートは、#{now_rate['rate']}円"
-
-      # 平均値などを見る
-      # which = now_rate['rate'].to_i > bitcoins_avg || now_rate['rate'].to_i > past_trans.rate + 30000
-
-      # 利確をすぐやる
+      # 前回の[購入]より、2万円レートが高くなっていたら売る
       which = now_rate['rate'].to_i > past_trans.rate + 20000
-
       puts "判定の結果：売りは#{which}"
       which
     elsif past_trans.order_type == 'sell'
       # 前回は売った = 今回は買う
-      # 前回のrateよりも、5000円now_rateが低ければ買う
-      # 5000円にしているのは、それくらいの回復力がbtcにはあるであろうから
 
       # 現在の買値レート
       now_rate = get_rate('buy')
-
-      # 過去1000分のデータからの平均値
-      bitcoins = Bitcoin.where(order_type: 'buy').limit(1000)
-      bitcoins_avg = bitcoins.pluck(:rate).inject(0.0){|r,i| r+=i } / bitcoins.size
-
-      puts "過去のbtcの平均値は#{bitcoins_avg}円\n現在のレートは、#{now_rate['rate']}円"
+      puts "現在のレートは#{now_rate['rate']}円"
 
       if now_rate['rate'].to_i > 2000000
         # 200万円を超えている場合は買わない
         puts '200万円を超えているため、購入を見送りました。'
         return false
       else
-        # 平均値などを見る
-        # which = now_rate['rate'].to_i < bitcoins_avg + 10000 && now_rate['rate'].to_i < past_trans.rate - 20000
-
-        # すぐに買う
+        # 前回の[売却]よりも2万円レートが下がっていたら、買う
         which = now_rate['rate'].to_i < past_trans.rate - 20000
         puts "判定の結果：購入は#{which}"
         which
