@@ -112,12 +112,12 @@ class Transaction < ApplicationRecord
 
       puts "現在のレートは#{now_rate['rate']}円"
 
-      # 前回の[購入]より、レートが1000円高くなっていたら売る
-      which = now_rate['rate'].to_i > past_trans.rate + 1000
+      # 前回の[購入]より、レートが6000円高くなっていたら売る
+      which = now_rate['rate'].to_i > past_trans.rate + 6000
 
       # 損切り判断
-      # 前回の[購入]レートより、現在のレートが1万円低くなっていたら売る
-      which = now_rate['rate'].to_i < past_trans.rate - 10000
+      # 前回の[購入]レートより、現在のレートが3000円低くなっていたら売る
+      which = now_rate['rate'].to_i < past_trans.rate - 3000
 
       puts "判定の結果：売りは#{which}"
       which
