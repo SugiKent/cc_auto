@@ -100,7 +100,12 @@ class Transaction < ApplicationRecord
 
       puts "過去のbtcの平均値は、#{bitcoins_avg}円\n現在のレートは、#{now_rate['rate']}円"
 
-      which = now_rate['rate'].to_i > bitcoins_avg || now_rate['rate'].to_i > past_trans.rate + 20000
+      # 平均値などを見る
+      # which = now_rate['rate'].to_i > bitcoins_avg || now_rate['rate'].to_i > past_trans.rate + 30000
+
+      # 利確をすぐやる
+      which = now_rate['rate'].to_i > past_trans.rate + 20000
+
       puts "判定の結果：売りは#{which}"
       which
     elsif past_trans.order_type == 'sell'
@@ -122,7 +127,11 @@ class Transaction < ApplicationRecord
         puts '200万円を超えているため、購入を見送りました。'
         return false
       else
-        which = now_rate['rate'].to_i < bitcoins_avg + 10000 && now_rate['rate'].to_i < past_trans.rate - 10000
+        # 平均値などを見る
+        # which = now_rate['rate'].to_i < bitcoins_avg + 10000 && now_rate['rate'].to_i < past_trans.rate - 20000
+
+        # すぐに買う
+        which = now_rate['rate'].to_i < past_trans.rate - 20000
         puts "判定の結果：購入は#{which}"
         which
       end
