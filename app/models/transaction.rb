@@ -50,12 +50,16 @@ class Transaction < ApplicationRecord
 
     uri = URI.parse "https://coincheck.com/api/exchange/orders"
     headers = get_signature(uri, key, secret, body.to_json)
-    puts "POSTでの#{order_type}を開始"
-    request_for_post(uri, headers, body)
+    if Rails.env == 'production'
+      puts "POSTでの#{order_type}を開始"
+      request_for_post(uri, headers, body)
 
-    trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
-    trans.save
-    puts "POSTでの#{order_type}を完了"
+      trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
+      trans.save
+      puts "POSTでの#{order_type}を完了"
+    else
+      puts '開発環境のため売買行わず'
+    end
 
   end
 
@@ -69,7 +73,10 @@ class Transaction < ApplicationRecord
   end
 
   def check_rate
+    puts Time.zone.now.to_s + '  Transaction#check_rateを実行'
     past_trans = Transaction.last
+
+    puts "最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円"
 
     if past_trans.order_type == 'buy'
       # 前回は買った = 今回は売る
@@ -82,7 +89,11 @@ class Transaction < ApplicationRecord
       bitcoins = Bitcoin.where(order_type: 'sell').limit(1000)
       bitcoins_avg = bitcoins.pluck(:rate).inject(0.0){|r,i| r+=i } / bitcoins.size
 
-      now_rate['rate'].to_i > bitcoins_avg || now_rate['rate'].to_i > past_trans.rate + 2000
+      puts "過去のbtcの平均値は、#{bitcoins_avg}円\n現在のレートは、#{now_rate['rate']}円"
+
+      which = now_rate['rate'].to_i > bitcoins_avg || now_rate['rate'].to_i > past_trans.rate + 2000
+      puts "判定の結果：#{which}"
+      which
     elsif past_trans.order_type == 'sell'
       # 前回は売った = 今回は買う
       # 前回のrateよりも、5000円now_rateが低ければ買う
@@ -95,11 +106,16 @@ class Transaction < ApplicationRecord
       bitcoins = Bitcoin.where(order_type: 'buy').limit(1000)
       bitcoins_avg = bitcoins.pluck(:rate).inject(0.0){|r,i| r+=i } / bitcoins.size
 
+      puts "過去のbtcの平均値は#{bitcoins_avg}円\n現在のレートは、#{now_rate['rate']}円"
+
       if now_rate['rate'].to_i > 2000000
         # 200万円を超えている場合は買わない
+        puts '200万円を超えているため、購入を見送りました。'
         return false
       else
-        now_rate['rate'].to_i < bitcoins_avg && now_rate['rate'].to_i < past_trans.rate - 2000
+        which = now_rate['rate'].to_i < bitcoins_avg && now_rate['rate'].to_i < past_trans.rate - 2000
+        puts "判定の結果：#{which}"
+        which
       end
     end
   end
