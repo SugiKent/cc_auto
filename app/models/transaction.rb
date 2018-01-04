@@ -117,7 +117,7 @@ class Transaction < ApplicationRecord
 
       # 損切り判断
       # 前回の[購入]レートより、現在のレートが3000円低くなっていたら売る
-      which = now_rate['rate'].to_i < past_trans.rate - 3000
+      which = now_rate['rate'].to_i < past_trans.rate - 5000
 
       puts "判定の結果：売りは#{which}"
       which
@@ -133,10 +133,12 @@ class Transaction < ApplicationRecord
         puts '200万円を超えているため、購入を見送りました。'
         return false
       else
-        last_bitcoin = Bitcoin.find(Bitcoin.where(order_type: 'buy').last.id - 2)
-        puts "2分前の購入レートは#{last_bitcoin.rate}円"
+        last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
+        last_bitcoin = Bitcoin.find(last_bitcoin_id - 2)
+        before_5m_bitcoin = Bitcoin.find(last_bitcoin_id - 10)
+        puts "2分前の購入レートは#{last_bitcoin.rate}円\n5分前の購入レートは#{before_5m_bitcoin.rate}円"
         # 2分前のレートより高かったら買う
-        which = now_rate['rate'].to_i > last_bitcoin.rate
+        which = now_rate['rate'].to_i > last_bitcoin.rate && now_rate['rate'].to_i > before_5m_bitcoin.rate
 
         # 前回の[売却]よりも1.5万円レートが下がっていたら、買う
         # which = now_rate['rate'].to_i < past_trans.rate
