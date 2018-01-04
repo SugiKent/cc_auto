@@ -61,10 +61,10 @@ class Transaction < ApplicationRecord
     headers = get_signature(uri, key, secret, body.to_json)
     if Rails.env == 'production'
       puts "POSTでの#{order_type}を開始"
-      request_for_post(uri, headers, body)
+      # request_for_post(uri, headers, body)
 
       trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
-      trans.save
+      # trans.save
       puts "POSTでの#{order_type}を完了"
     else
       puts '開発環境のため売買行わず'
