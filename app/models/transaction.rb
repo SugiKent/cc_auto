@@ -31,16 +31,25 @@ class Transaction < ApplicationRecord
     return false unless check_rate
 
     amount = 0.005
-    # 最後の取引が"買い"なら、"売る"
-    order_type = if Transaction.last.order_type == 'buy'
-      'sell'
-    else
-      'buy'
-    end
     rate = get_rate(order_type)
 
+    # 最後の取引が"買い"なら、"売る"
+    if Transaction.last.order_type == 'buy'
+      # 売る場合
+      order_type = 'sell'
+
+      # 相場より300円あげた指値で売る
+      price = rate['rate'].to_i + 300
+    else
+      # 買う場合
+      order_type = 'buy'
+
+      # 相場より300円下げた指値で買う
+      price = rate['rate'].to_i - 300
+    end
+
     body = {
-      rate: rate['rate'].to_i,
+      rate: price,
       amount: amount,
       order_type: order_type,
       pair: 'btc_jpy',
