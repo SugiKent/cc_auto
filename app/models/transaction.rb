@@ -92,7 +92,7 @@ class Transaction < ApplicationRecord
       puts "過去のbtcの平均値は、#{bitcoins_avg}円\n現在のレートは、#{now_rate['rate']}円"
 
       which = now_rate['rate'].to_i > bitcoins_avg || now_rate['rate'].to_i > past_trans.rate + 2000
-      puts "判定の結果：#{which}"
+      puts "判定の結果：売りは#{which}"
       which
     elsif past_trans.order_type == 'sell'
       # 前回は売った = 今回は買う
@@ -114,7 +114,7 @@ class Transaction < ApplicationRecord
         return false
       else
         which = now_rate['rate'].to_i < bitcoins_avg + 1000 && now_rate['rate'].to_i < past_trans.rate - 2000
-        puts "判定の結果：#{which}"
+        puts "判定の結果：購入は#{which}"
         which
       end
     end
