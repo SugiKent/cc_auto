@@ -76,9 +76,14 @@ class Transaction < ApplicationRecord
       trans.save
       puts "POSTでの#{order_type}を完了"
 
+      # 残高を取得
       balance = get_balance
-
-      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高\n#{balance['jpy']}円\nBitcoin：#{balance['btc']}"
+      jpy_balance = if order_type == 'buy'
+        balance['jpy'].to_i - amount*price
+      else
+        balance['jpy'].to_i + amount*price
+      end
+      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高\n#{jpy_balance}円\nBitcoin：#{balance['btc']}"
 
       line_notify(msg)
     else
