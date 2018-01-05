@@ -118,20 +118,22 @@ class Transaction < ApplicationRecord
         puts "前回の[購入]より、レートが3000円高いので、売り"
       end
 
-      # 上がり続けている時は売らない
-      # 1~3分前のbitcoin価格を取得
-      last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-      before_1m_rate = Bitcoin.find(last_bitcoin_id - 1).rate
-      before_2m_rate = Bitcoin.find(last_bitcoin_id - 3).rate
-      before_3m_rate = Bitcoin.find(last_bitcoin_id - 5).rate
-      # 1分前 > 2分前 > 3分前とレートが上昇していたら売らない
-      which = !(before_1m_rate > before_2m_rate &&
-              before_2m_rate > before_3m_rate)
-      puts "1分前の販売レートは#{before_1m_rate}円\n2分前の販売レートは#{before_2m_rate}円\n3分前の販売レートは#{before_3m_rate}円"
       if which
-        puts "ここ3分間のレートは上がり続けていないので、売り"
-      else
-        puts "ここ3分間レートが上がり続けているので、売らない"
+        # 上がり続けている時は売らない
+        # 1~3分前のbitcoin価格を取得
+        last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
+        before_1m_rate = Bitcoin.find(last_bitcoin_id - 1).rate
+        before_2m_rate = Bitcoin.find(last_bitcoin_id - 3).rate
+        before_3m_rate = Bitcoin.find(last_bitcoin_id - 5).rate
+        # 1分前 > 2分前 > 3分前とレートが上昇していたら売らない
+        which = !(before_1m_rate > before_2m_rate &&
+                before_2m_rate > before_3m_rate)
+        puts "1分前の販売レートは#{before_1m_rate}円\n2分前の販売レートは#{before_2m_rate}円\n3分前の販売レートは#{before_3m_rate}円"
+        if which
+          puts "ここ3分間のレートは上がり続けていないので、売り"
+        else
+          puts "ここ3分間レートが上がり続けているので、売らない"
+        end
       end
 
       puts "判定の結果：売りは#{which}"
