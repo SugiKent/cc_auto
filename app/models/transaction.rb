@@ -260,11 +260,11 @@ class Transaction < ApplicationRecord
   end
 
   def make_request(msg)
-    TOKEN = ENV['LINE_TOKEN']
-    URI = URI.parse("https://notify-api.line.me/api/notify")
+    token = ENV['LINE_TOKEN']
+    uri = URI.parse("https://notify-api.line.me/api/notify")
 
-    request = Net::HTTP::Post.new(URI)
-    request["Authorization"] = "Bearer #{TOKEN}"
+    request = Net::HTTP::Post.new(uri)
+    request["Authorization"] = "Bearer #{token}"
     request.set_form_data(message: msg)
     request
   end
