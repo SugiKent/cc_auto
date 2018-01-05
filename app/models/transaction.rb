@@ -91,7 +91,7 @@ class Transaction < ApplicationRecord
   end
 
   def get_ticker
-    # 1BTC当たりのorder_typeのレートを取得する
+    # Ticker情報を取得する
     uri = URI.parse "https://coincheck.com/api/ticker"
     json = Net::HTTP.get(uri)
     result = JSON.parse(json)
@@ -104,20 +104,35 @@ class Transaction < ApplicationRecord
     past_trans = Transaction.last
     puts "最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円"
 
+    binding.pry
+
     if past_trans.order_type == 'buy'
       # 前回は買った = 今回は売る
 
       # 現在の売値レート
       now_rate = get_rate('sell')
-
       puts "現在のレートは#{now_rate['rate']}円"
 
       # 前回の[購入]より、レートが3000円高くなっていたら売る
       which = now_rate['rate'].to_i > past_trans.rate + 3000
 
-      # 損切り判断
-      # 前回の[購入]レートより、現在のレートが3000円低くなっていたら売る
-      # which = now_rate['rate'].to_i < past_trans.rate - 5000
+      if which
+        puts "前回の[購入]より、レートが3000円高いので、売り"
+      end
+
+      # 上がり続けている時は売らない
+      # 1~3分前のbitcoin価格を取得
+      last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
+      before_1m_rate = Bitcoin.find(last_bitcoin_id - 1).rate
+      before_2m_rate = Bitcoin.find(last_bitcoin_id - 3).rate
+      before_3m_rate = Bitcoin.find(last_bitcoin_id - 5).rate
+      # 1分前 > 2分前 > 3分前とレートが上昇していたら売らない
+      which = !(before_1m_rate > before_2m_rate &&
+              before_2m_rate > before_3m_rate)
+      puts "1分前の販売レートは#{before_1m_rate}円\n2分前の販売レートは#{before_2m_rate}円\n3分前の販売レートは#{before_3m_rate}円"
+      if which
+        puts "ここ3分間のレートは上がり続けていないので、売り"
+      end
 
       puts "判定の結果：売りは#{which}"
       which
@@ -134,15 +149,24 @@ class Transaction < ApplicationRecord
         return false
       else
         last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-        before_2m_bitcoin = Bitcoin.find(last_bitcoin_id - 2)
-        before_5m_bitcoin = Bitcoin.find(last_bitcoin_id - 10)
-        puts "2分前の購入レートは#{before_2m_bitcoin.rate}円\n5分前の購入レートは#{before_5m_bitcoin.rate}円"
+        before_1m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
+        before_5m_rate = Bitcoin.find(last_bitcoin_id - 10).rate
+        puts "1分前の購入レートは#{before_1m_rate}円\n5分前の購入レートは#{before_5m_rate}円"
 
         # 5分前 < 2分前 < 現在と上昇していたら買う
-        which = now_rate['rate'].to_i > before_2m_bitcoin.rate && before_2m_bitcoin.rate > before_5m_bitcoin.rate
+        which = now_rate['rate'].to_i > before_1m_rate && before_1m_rate > before_5m_rate
+        if which
+          puts "5分前 < 2分前 < 現在と上昇しているので購入"
+        end
 
-        # 前回の[売却]よりも1.5万円レートが下がっていたら、買う
-        # which = now_rate['rate'].to_i < past_trans.rate
+        # 高掴み対策
+        # 24時間での最高取引価格-1.2万円より低いなら買う
+        ticker = get_ticker
+        which = now_rate['rate'].to_i < ticker['high'].to_i - 12000
+        puts "24時間以内の最高値が#{ticker['high'].to_i}円"
+        if which
+          puts "高掴みではないので、購入"
+        end
 
         puts "判定の結果：購入は#{which}"
         which
