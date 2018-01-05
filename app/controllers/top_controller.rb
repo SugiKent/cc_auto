@@ -9,5 +9,7 @@ class TopController < ApplicationController
 
     @transactions = JSON.parse(trans.read_transactions.body)
 
+    @ticker = trans.get_ticker
+
   end
 end

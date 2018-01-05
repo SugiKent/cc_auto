@@ -75,6 +75,12 @@ class Transaction < ApplicationRecord
       trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
       trans.save
       puts "POSTでの#{order_type}を完了"
+
+      balance = get_balance
+
+      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{rate['rate'].to_i}円\n\n------------\n残高\n#{balance['jpy']}円\nBitcoin：#{balance['btc']}"
+
+      line_notify(msg)
     else
       puts '開発環境のため売買行わず'
     end
@@ -97,6 +103,16 @@ class Transaction < ApplicationRecord
     result = JSON.parse(json)
 
     result
+  end
+
+  # 残高を取得してJSONで返します
+  def get_balance
+    key = ENV['CC_API_KEY']
+    secret = ENV['CC_API_SECRET']
+
+    uri = URI.parse "https://coincheck.com/api/accounts/balance"
+    headers = get_signature(uri, key, secret)
+    JSON.parse(request_for_get(uri, headers).body)
   end
 
   def check_rate
@@ -234,6 +250,23 @@ class Transaction < ApplicationRecord
     headers.merge!({
       "Content-Type" => "application/json"
     })
+  end
+
+  def line_notify(msg)
+    request = make_request(msg)
+    response = Net::HTTP.start(URI.hostname, URI.port, use_ssl: URI.scheme == "https") do |https|
+      https.request(request)
+    end
+  end
+
+  def make_request(msg)
+    TOKEN = ENV['LINE_TOKEN']
+    URI = URI.parse("https://notify-api.line.me/api/notify")
+
+    request = Net::HTTP::Post.new(URI)
+    request["Authorization"] = "Bearer #{TOKEN}"
+    request.set_form_data(message: msg)
+    request
   end
 
 end
