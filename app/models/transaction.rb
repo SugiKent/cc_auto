@@ -156,7 +156,7 @@ class Transaction < ApplicationRecord
       end
 
       # 損切り対策
-      # 購入時より1万下がったら売る
+      # 購入時より1.5万下がったら売る
       which = now_rate < past_trans.rate - 15000
 
       puts "判定の結果：売りは#{which}"
