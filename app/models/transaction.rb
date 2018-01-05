@@ -149,41 +149,35 @@ class Transaction < ApplicationRecord
       now_rate = now_rate['rate'].to_i
       puts "現在のレートは#{now_rate}円"
 
-      if now_rate > 2000000
-        # 200万円を超えている場合は買わない
-        puts '200万円を超えているため、購入を見送りました。'
-        return false
+      last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
+      before_1m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
+      before_5m_rate = Bitcoin.find(last_bitcoin_id - 10).rate
+      puts '現在 > 1分前 && 1分前 > 5分前'
+      puts "#{now_rate} > #{before_1m_rate} && #{before_1m_rate} > #{before_5m_rate}"
+
+      # 5分前 < 1分前 < 現在と上昇していたら買う
+      which = now_rate > before_1m_rate && before_1m_rate > before_5m_rate
+      if which
+        puts "上昇しているので購入"
       else
-        last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-        before_1m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
-        before_5m_rate = Bitcoin.find(last_bitcoin_id - 10).rate
-        puts '現在 > 1分前 && 1分前 > 5分前'
-        puts "#{now_rate} > #{before_1m_rate} && #{before_1m_rate} > #{before_5m_rate}"
-
-        # 5分前 < 1分前 < 現在と上昇していたら買う
-        which = now_rate > before_1m_rate && before_1m_rate > before_5m_rate
-        if which
-          puts "上昇しているので購入"
-        else
-          puts "上昇していないので購入を見送り"
-        end
-
-        if which
-          # 高掴み対策
-          # 24時間での最高取引価格-1.2万円より低いなら買う
-          ticker = get_ticker
-          which = now_rate < ticker['high'].to_i - 12000
-          puts "24時間以内の最高値が#{ticker['high'].to_i}円"
-          if which
-            puts "高掴みではないので、購入"
-          else
-            puts "高掴みしそうなので、購入を見送り"
-          end
-        end
-
-        puts "判定の結果：購入は#{which}"
-        which
+        puts "上昇していないので購入を見送り"
       end
+
+      if which
+        # 高掴み対策
+        # 24時間での最高取引価格-1.2万円より低いなら買う
+        ticker = get_ticker
+        which = now_rate < ticker['high'].to_i - 12000
+        puts "24時間以内の最高値が#{ticker['high'].to_i}円"
+        if which
+          puts "高掴みではないので、購入"
+        else
+          puts "高掴みしそうなので、購入を見送り"
+        end
+      end
+
+      puts "判定の結果：購入は#{which}"
+      which
     end
   end
 
