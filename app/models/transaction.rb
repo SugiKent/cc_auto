@@ -214,6 +214,15 @@ class Transaction < ApplicationRecord
     headers = get_signature(uri, key, secret)
     request_for_get(uri, headers)
   end
+  
+  def line_notify(msg)
+    uri = URI.parse("https://notify-api.line.me/api/notify")
+
+    request = make_request(msg)
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |https|
+      https.request(request)
+    end
+  end
 
   private
 
@@ -258,13 +267,6 @@ class Transaction < ApplicationRecord
     headers.merge!({
       "Content-Type" => "application/json"
     })
-  end
-
-  def line_notify(msg)
-    request = make_request(msg)
-    response = Net::HTTP.start(URI.hostname, URI.port, use_ssl: URI.scheme == "https") do |https|
-      https.request(request)
-    end
   end
 
   def make_request(msg)
