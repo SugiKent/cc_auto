@@ -20,14 +20,26 @@
       = all_jpys
       | 円
 
-    h3 板の最高取引価格
+    h4 板の最高取引価格
     p
       = @ticker['high']
       | 円
 
-    h3 板の最低取引価格
+    h4 板の最低取引価格
     p
       = @ticker['low']
+      | 円
+    h4 最後の取引の価格
+    p
+      = @ticker['last']
+      | 円
+    h4 現在の買い注文の最高価格
+    p
+      = @ticker['bid']
+      | 円
+    h4 現在の売り注文の最安価格
+    p
+      = @ticker['ask']
       | 円
 
   .col-sm-8.col-12
