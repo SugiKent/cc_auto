@@ -129,7 +129,7 @@ class Transaction < ApplicationRecord
       puts "現在のレートは#{now_rate}円"
 
       # 前回の[購入]より、レートが3000円高くなっていたら売る
-      which = now_rate > past_trans.rate + 3000
+      which = now_rate > past_trans.rate + 10000
 
       if which
         puts "前回の[購入]より、レートが3000円高いので、売り"
