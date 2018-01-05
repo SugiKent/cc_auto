@@ -132,9 +132,9 @@ class Transaction < ApplicationRecord
       which = now_rate > past_trans.rate + 20000
 
       if which
-        puts "前回の[購入]より、レートが3000円高いので、売り"
+        puts "前回の[購入]より、レートが20000円高いので、売り"
       else
-        puts "利確目標+3000円に達していないので、売らない"
+        puts "利確目標+20000円に達していないので、売らない"
       end
 
       if which
