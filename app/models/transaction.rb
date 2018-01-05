@@ -104,8 +104,6 @@ class Transaction < ApplicationRecord
     past_trans = Transaction.last
     puts "最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円"
 
-    binding.pry
-
     if past_trans.order_type == 'buy'
       # 前回は買った = 今回は売る
 
@@ -132,6 +130,8 @@ class Transaction < ApplicationRecord
       puts "1分前の販売レートは#{before_1m_rate}円\n2分前の販売レートは#{before_2m_rate}円\n3分前の販売レートは#{before_3m_rate}円"
       if which
         puts "ここ3分間のレートは上がり続けていないので、売り"
+      else
+        puts "ここ3分間レートが上がり続けているので、売らない"
       end
 
       puts "判定の結果：売りは#{which}"
@@ -166,6 +166,8 @@ class Transaction < ApplicationRecord
         puts "24時間以内の最高値が#{ticker['high'].to_i}円"
         if which
           puts "高掴みではないので、購入"
+        else
+          puts "高掴みしそうなので、購入を見送り"
         end
 
         puts "判定の結果：購入は#{which}"
