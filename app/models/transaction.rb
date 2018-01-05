@@ -159,6 +159,10 @@ class Transaction < ApplicationRecord
       # 購入時より1.5万下がったら売る
       which = now_rate < past_trans.rate - 15000
 
+      if which
+        puts '損切りで、売り'
+      end
+
       puts "判定の結果：売りは#{which}"
       which
     elsif past_trans.order_type == 'sell'
