@@ -161,15 +161,17 @@ class Transaction < ApplicationRecord
           puts "5分前 < 2分前 < 現在と上昇しているので購入"
         end
 
-        # 高掴み対策
-        # 24時間での最高取引価格-1.2万円より低いなら買う
-        ticker = get_ticker
-        which = now_rate['rate'].to_i < ticker['high'].to_i - 12000
-        puts "24時間以内の最高値が#{ticker['high'].to_i}円"
         if which
-          puts "高掴みではないので、購入"
-        else
-          puts "高掴みしそうなので、購入を見送り"
+          # 高掴み対策
+          # 24時間での最高取引価格-1.2万円より低いなら買う
+          ticker = get_ticker
+          which = now_rate['rate'].to_i < ticker['high'].to_i - 12000
+          puts "24時間以内の最高値が#{ticker['high'].to_i}円"
+          if which
+            puts "高掴みではないので、購入"
+          else
+            puts "高掴みしそうなので、購入を見送り"
+          end
         end
 
         puts "判定の結果：購入は#{which}"
