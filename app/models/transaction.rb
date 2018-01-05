@@ -72,13 +72,13 @@ class Transaction < ApplicationRecord
       request_for_post(uri, headers, body)
 
       # amountがFloat型のためデータ登録できず
-      trans = Transaction.new(type: 0, amount: amount, rate: rate['rate'].to_i, order_type: order_type)
+      trans = Transaction.new(type: 0, amount: amount, rate: price, order_type: order_type)
       trans.save
       puts "POSTでの#{order_type}を完了"
 
       balance = get_balance
 
-      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{rate['rate'].to_i}円\n\n------------\n残高\n#{balance['jpy']}円\nBitcoin：#{balance['btc']}"
+      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高\n#{balance['jpy']}円\nBitcoin：#{balance['btc']}"
 
       line_notify(msg)
     else
@@ -129,12 +129,13 @@ class Transaction < ApplicationRecord
       puts "現在のレートは#{now_rate}円"
 
       # 前回の[購入]より、レートが2万高くなっていたら売る
-      which = now_rate > past_trans.rate + 5000
+      rikaku = 5000
+      which = now_rate > past_trans.rate + rikaku
 
       if which
-        puts "前回の[購入]より、レートが20000円高いので、売り"
+        puts "前回の[購入]より、レートが#{rikaku}円高いので、売り"
       else
-        puts "利確目標+20000円に達していないので、売らない"
+        puts "利確目標+#{rikaku}円に達していないので、売らない"
       end
 
       if which
@@ -157,7 +158,8 @@ class Transaction < ApplicationRecord
 
       # 損切り対策
       # 購入時より2万下がったら売る
-      which = now_rate < past_trans.rate - 20000
+      songiri = 20000
+      which = now_rate < past_trans.rate - songiri
 
       if which
         puts '損切りで、売り'
