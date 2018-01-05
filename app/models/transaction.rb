@@ -123,15 +123,13 @@ class Transaction < ApplicationRecord
         # 上がり続けている時は売らない
         # 1~3分前のbitcoin価格を取得
         last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-        before_1m_rate = Bitcoin.find(last_bitcoin_id - 1).rate
         before_2m_rate = Bitcoin.find(last_bitcoin_id - 3).rate
-        before_3m_rate = Bitcoin.find(last_bitcoin_id - 5).rate
+        before_4m_rate = Bitcoin.find(last_bitcoin_id - 7).rate
         # 1分前 > 2分前 > 3分前とレートが上昇していたら売らない
-        which = !(now_rate > before_1m_rate &&
-                before_1m_rate > before_2m_rate &&
-                before_2m_rate > before_3m_rate)
-        puts "現在 > 1分前 && 1分前 > 2分前 && 2分前 > 3分前"
-        puts "#{now_rate} > #{before_1m_rate} && #{before_1m_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}"
+        which = !(now_rate > before_2m_rate &&
+                before_2m_rate > before_4m_rate)
+        puts "現在 > 2分前 && 2分前 > 4分前"
+        puts "#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_4m_rate}"
         if which
           puts "ここ3分間のレートは上がり続けていないので、売り"
         else
