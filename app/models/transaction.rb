@@ -109,10 +109,11 @@ class Transaction < ApplicationRecord
 
       # 現在の売値レート
       now_rate = get_rate('sell')
+      now_rate = now_rate['rate'].to_i
       puts "現在のレートは#{now_rate['rate']}円"
 
       # 前回の[購入]より、レートが3000円高くなっていたら売る
-      which = now_rate['rate'].to_i > past_trans.rate + 3000
+      which = now_rate > past_trans.rate + 3000
 
       if which
         puts "前回の[購入]より、レートが3000円高いので、売り"
@@ -126,9 +127,11 @@ class Transaction < ApplicationRecord
         before_2m_rate = Bitcoin.find(last_bitcoin_id - 3).rate
         before_3m_rate = Bitcoin.find(last_bitcoin_id - 5).rate
         # 1分前 > 2分前 > 3分前とレートが上昇していたら売らない
-        which = !(before_1m_rate > before_2m_rate &&
+        which = !(now_rate > before_1m_rate &&
+                before_1m_rate > before_2m_rate &&
                 before_2m_rate > before_3m_rate)
-        puts "1分前の販売レートは#{before_1m_rate}円\n2分前の販売レートは#{before_2m_rate}円\n3分前の販売レートは#{before_3m_rate}円"
+        puts "現在 > 1分前 && 1分前 > 2分前 && 2分前 > 3分前"
+        puts "#{now_rate} > #{before_1m_rate} && #{before_1m_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}"
         if which
           puts "ここ3分間のレートは上がり続けていないので、売り"
         else
@@ -143,9 +146,10 @@ class Transaction < ApplicationRecord
 
       # 現在の買値レート
       now_rate = get_rate('buy')
-      puts "現在のレートは#{now_rate['rate']}円"
+      now_rate = now_rate['rate'].to_i
+      puts "現在のレートは#{now_rate}円"
 
-      if now_rate['rate'].to_i > 2000000
+      if now_rate > 2000000
         # 200万円を超えている場合は買わない
         puts '200万円を超えているため、購入を見送りました。'
         return false
@@ -153,19 +157,22 @@ class Transaction < ApplicationRecord
         last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
         before_1m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
         before_5m_rate = Bitcoin.find(last_bitcoin_id - 10).rate
-        puts "1分前の購入レートは#{before_1m_rate}円\n5分前の購入レートは#{before_5m_rate}円"
+        puts '現在 > 1分前 && 1分前 > 5分前'
+        puts "#{now_rate} > #{before_1m_rate} && #{before_1m_rate} > #{before_5m_rate}"
 
-        # 5分前 < 2分前 < 現在と上昇していたら買う
-        which = now_rate['rate'].to_i > before_1m_rate && before_1m_rate > before_5m_rate
+        # 5分前 < 1分前 < 現在と上昇していたら買う
+        which = now_rate > before_1m_rate && before_1m_rate > before_5m_rate
         if which
-          puts "5分前 < 2分前 < 現在と上昇しているので購入"
+          puts "上昇しているので購入"
+        else
+          puts "上昇していないので購入を見送り"
         end
 
         if which
           # 高掴み対策
           # 24時間での最高取引価格-1.2万円より低いなら買う
           ticker = get_ticker
-          which = now_rate['rate'].to_i < ticker['high'].to_i - 12000
+          which = now_rate < ticker['high'].to_i - 12000
           puts "24時間以内の最高値が#{ticker['high'].to_i}円"
           if which
             puts "高掴みではないので、購入"
