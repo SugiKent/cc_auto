@@ -153,17 +153,17 @@ class Transaction < ApplicationRecord
           puts "ここ3分間のレートは上がり続けていないので、売り"
         else
           puts "ここ3分間レートが上がり続けているので、売らない"
+          # 損切り対策
+          # 購入時より2万下がったら売る
+          songiri = 20000
+          which = now_rate < past_trans.rate - songiri
+
+          if which
+            puts '損切りで、売り'
+          end
         end
       end
 
-      # 損切り対策
-      # 購入時より2万下がったら売る
-      songiri = 20000
-      which = now_rate < past_trans.rate - songiri
-
-      if which
-        puts '損切りで、売り'
-      end
 
       puts "判定の結果：売りは#{which}"
       which
