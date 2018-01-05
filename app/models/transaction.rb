@@ -110,7 +110,7 @@ class Transaction < ApplicationRecord
       # 現在の売値レート
       now_rate = get_rate('sell')
       now_rate = now_rate['rate'].to_i
-      puts "現在のレートは#{now_rate['rate']}円"
+      puts "現在のレートは#{now_rate}円"
 
       # 前回の[購入]より、レートが3000円高くなっていたら売る
       which = now_rate > past_trans.rate + 3000
