@@ -117,6 +117,8 @@ class Transaction < ApplicationRecord
 
       if which
         puts "前回の[購入]より、レートが3000円高いので、売り"
+      else
+        puts "利確目標+3000円に達していないので、売らない"
       end
 
       if which
