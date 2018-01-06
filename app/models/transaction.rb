@@ -195,7 +195,7 @@ class Transaction < ApplicationRecord
 
       if which
         # 高掴み対策
-        # 24時間での最高取引価格-1.2万円より低いなら買う
+        # 24時間での最高取引価格-2万円より低いなら買う
         ticker = get_ticker
         which = now_rate < ticker['high'].to_i - 20000
         puts "24時間以内の最高値が#{ticker['high'].to_i}円"
