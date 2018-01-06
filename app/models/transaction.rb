@@ -169,7 +169,6 @@ class Transaction < ApplicationRecord
         end
       end
 
-
       puts "判定の結果：売りは#{which}"
       which
     elsif past_trans.order_type == 'sell'
@@ -198,7 +197,7 @@ class Transaction < ApplicationRecord
         # 高掴み対策
         # 24時間での最高取引価格-1.2万円より低いなら買う
         ticker = get_ticker
-        which = now_rate < ticker['high'].to_i - 12000
+        which = now_rate < ticker['high'].to_i - 20000
         puts "24時間以内の最高値が#{ticker['high'].to_i}円"
         if which
           puts "高掴みではないので、購入"
