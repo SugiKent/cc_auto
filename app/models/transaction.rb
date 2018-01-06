@@ -83,7 +83,7 @@ class Transaction < ApplicationRecord
       else
         balance['jpy'].to_i + amount*price
       end
-      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高\n#{jpy_balance}円\nBitcoin：#{balance['btc']}"
+      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高：#{jpy_balance}円\nBitcoin：#{balance['btc']}"
 
       line_notify(msg)
     else
