@@ -11,5 +11,9 @@ class TopController < ApplicationController
 
     @ticker = trans.get_ticker
 
+    @balance = trans.get_balance
+
+    @btc_rate = trans.get_rate('sell')
+
   end
 end

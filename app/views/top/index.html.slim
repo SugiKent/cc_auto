@@ -8,13 +8,27 @@
 
 .row
   .col-sm-4.col-12
-    h2
+    table.table.table-striped
+      tr
+        th 日本円残高
+        th 仮想通貨残高
+        th 予想日本円残高
+      tr
+        td
+          = @balance['jpy']
+          | 円
+        td
+          = @balance['btc']
+        td
+          = @balance['jpy'].to_i + @balance['btc'].to_f * @btc_rate['rate'].to_i
+          | 円
+    h4
       | 今日の利益
     p
       = today_jpys.sum
       | 円
 
-    h2
+    h4
       | 最近の利益
     p
       = all_jpys
