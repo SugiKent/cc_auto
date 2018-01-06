@@ -69,23 +69,30 @@ class Transaction < ApplicationRecord
     headers = get_signature(uri, key, secret, body.to_json)
     if Rails.env == 'production'
       puts "POSTでの#{order_type}を開始"
-      request_for_post(uri, headers, body)
+      post_response = request_for_post(uri, headers, body)
 
-      # amountがFloat型のためデータ登録できず
-      trans = Transaction.new(type: 0, amount: amount, rate: price, order_type: order_type)
-      trans.save
-      puts "POSTでの#{order_type}を完了"
+      if post_response.code == '200'
+        # amountがFloat型のためデータ登録できず
+        trans = Transaction.new(type: 0, amount: amount, rate: price, order_type: order_type)
+        trans.save
+        puts "POSTでの#{order_type}を完了"
+        # 残高を取得
+        balance = get_balance
+        jpy_balance = if order_type == 'buy'
+          balance['jpy'].to_i - amount*price
+        else
+          balance['jpy'].to_i + amount*price
+        end
+        msg = "[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高：#{jpy_balance}円\nBitcoin：#{balance['btc']}"
 
-      # 残高を取得
-      balance = get_balance
-      jpy_balance = if order_type == 'buy'
-        balance['jpy'].to_i - amount*price
+        line_notify(msg)
       else
-        balance['jpy'].to_i + amount*price
-      end
-      msg = "cc_auto\n[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高：#{jpy_balance}円\nBitcoin：#{balance['btc']}"
+        puts "POSTでの#{order_type}に失敗"
 
-      line_notify(msg)
+        msg = "[#{order_type}]に失敗しました。"
+        line_notify(msg)
+      end
+
     else
       puts '開発環境のため売買行わず'
     end
