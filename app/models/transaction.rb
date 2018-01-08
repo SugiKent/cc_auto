@@ -140,40 +140,35 @@ class Transaction < ApplicationRecord
       now_rate = now_rate['rate'].to_i
       puts "現在のレートは#{now_rate}円"
 
-      # 前回の[購入]より、レートが2万高くなっていたら売る
-      rikaku = 5000
-      which = now_rate > past_trans.rate + rikaku
+      # tickerを取得
+      ticker = get_ticker
+
+      # なるべく高い価格で売る
+      # 24時間以内の最高取引価格-1万円
+      # かつ、購入時より高ければ売る
+      which = now_rate > past_trans.rate && now_rate > ticker['high'].to_i - 10000
 
       if which
-        puts "前回の[購入]より、レートが#{rikaku}円高いので、売り"
+        puts "【24時間以内の最高取引価格-1万円】かつ、【購入時より高い】ので、売り"
       else
-        puts "利確目標+#{rikaku}円に達していないので、売らない"
+        puts "【24時間以内の最高取引価格-1万円】かつ、【購入時より高く】ないので、売らない"
       end
 
       if which
         # 上がり続けている時は売らない
         # 1~3分前のbitcoin価格を取得
-        last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-        before_2m_rate = Bitcoin.find(last_bitcoin_id - 3).rate
-        before_4m_rate = Bitcoin.find(last_bitcoin_id - 7).rate
-        # 1分前 > 2分前 > 3分前とレートが上昇していたら売らない
+        last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
+        before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
+        before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
+        # 現在 > 2分前 > 3分前とレートが上昇していたら売らない
         which = !(now_rate > before_2m_rate &&
-                before_2m_rate > before_4m_rate)
-        puts "現在 > 2分前 && 2分前 > 4分前"
-        puts "#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_4m_rate}"
+                before_2m_rate > before_3m_rate)
+        puts "現在 > 2分前 && 2分前 > 3分前"
+        puts "#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}"
         if which
           puts "ここ3分間のレートは上がり続けていないので、売り"
         else
           puts "ここ3分間レートが上がり続けているので、売らない"
-        end
-      else
-        # 損切り対策
-        # 購入時より2万下がったら売る
-        songiri = 20000
-        which = now_rate < past_trans.rate - songiri
-
-        if which
-          puts '損切りで、売り'
         end
       end
 
@@ -187,35 +182,50 @@ class Transaction < ApplicationRecord
       now_rate = now_rate['rate'].to_i
       puts "現在のレートは#{now_rate}円"
 
-      last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-      before_1m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
-      before_5m_rate = Bitcoin.find(last_bitcoin_id - 10).rate
-      puts '現在 > 1分前 && 1分前 > 5分前'
-      puts "#{now_rate} > #{before_1m_rate} && #{before_1m_rate} > #{before_5m_rate}"
+      # tickerを取得
+      ticker = get_ticker
 
-      # 5分前 < 1分前 < 現在と上昇していたら買う
-      which = now_rate > before_1m_rate && before_1m_rate > before_5m_rate
+      # 24時間以内の最安取引価格+1万円以下なら購入
+      which = now_rate < ticker['low'].to_i + 10000
+
       if which
-        puts "上昇しているので購入"
+        puts "【24時間以内の最安取引価格+1万円以下】なので購入"
       else
-        puts "上昇していないので購入を見送り"
+        puts '【24時間以内の最安取引価格+1万円以下】ではないので購入しない'
       end
 
       if which
-        # 高掴み対策
-        # 24時間での最高取引価格-2万円より低いなら買う
-        ticker = get_ticker
-        which = now_rate < ticker['high'].to_i - 20000
-        puts "24時間以内の最高値が#{ticker['high'].to_i}円"
+        last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
+        before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
+        before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
+        puts '現在 > 2分前 && 2分前 > 3分前'
+        puts "#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}"
+
+        # 現在 < 2分前 < 3分前と下落していたら買わない
+        which = !(now_rate < before_2m_rate &&
+                  before_2m_rate < before_3m_rate)
         if which
-          puts "高掴みではないので、購入"
+          puts "下落し続けていないので購入"
         else
-          puts "高掴みしそうなので、購入を見送り"
+          puts "下落し続けているので買わない"
+        end
+
+        if which
+          # 高掴み対策
+          # 24時間での最高取引価格-2万円より低いなら買う
+          which = now_rate < ticker['high'].to_i - 20000
+          puts "24時間以内の最高値が#{ticker['high'].to_i}円"
+          if which
+            puts "高掴みではないので、購入"
+          else
+            puts "高掴みしそうなので、購入を見送り"
+          end
         end
       end
 
       puts "判定の結果：購入は#{which}"
       which
+
     end
   end
 
