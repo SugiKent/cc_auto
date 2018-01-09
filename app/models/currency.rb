@@ -69,6 +69,7 @@ class Currency < ApplicationRecord
   def notify_lowest_rate(type,rate)
     msg = "【bot】#{type}が24時間以内で最低値になりました。\n\n現在のレート：#{rate}円/#{type}\n\ncoincheckのデータより"
     line_notify(msg)
+    Tweet.new.tweet(msg)
   end
 
   def lowest_rate_1day(type)
