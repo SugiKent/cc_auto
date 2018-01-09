@@ -147,7 +147,6 @@ class Transaction < ApplicationRecord
       # 24時間以内の最高取引価格-1万円
       # かつ、購入時より高ければ売る
       which = now_rate > past_trans.rate && now_rate > ticker['high'].to_i - 10000
-
       puts "24時間以内の最高取引価格：#{ticker['high'].to_i}円"
 
       if which
@@ -186,6 +185,7 @@ class Transaction < ApplicationRecord
 
       # tickerを取得
       ticker = get_ticker
+      puts "24時間以内の最安取引価格：#{ticker['low'].to_i}円"
 
       # 24時間以内の最安取引価格+1万円以下なら購入
       which = now_rate < ticker['low'].to_i + 10000
