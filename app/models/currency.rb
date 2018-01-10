@@ -68,30 +68,12 @@ class Currency < ApplicationRecord
 
   def notify_lowest_rate(type,rate)
     msg = "【BOT】#{type}が24時間以内で最低値になりました。\n\n現在のレート：#{rate}円/#{type}\n\ncoincheckのデータより"
-    line_notify(msg)
-    Tweet.new.tweet(msg)
+    Line.new.notify(msg)
+    # Tweet.new.tweet(msg)
   end
 
   def lowest_rate_1day(type)
     lowest_rate = Currency.where(type: type).where("currencies.created_at > ?", DateTime.now - 1.days).order(:rate).first
   end
 
-  def line_notify(msg)
-    uri = URI.parse("https://notify-api.line.me/api/notify")
-
-    request = make_request(msg)
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |https|
-      https.request(request)
-    end
-  end
-
-  def make_request(msg)
-    token = ENV['LINE_TOKEN']
-    uri = URI.parse("https://notify-api.line.me/api/notify")
-
-    request = Net::HTTP::Post.new(uri)
-    request["Authorization"] = "Bearer #{token}"
-    request.set_form_data(message: msg)
-    request
-  end
 end

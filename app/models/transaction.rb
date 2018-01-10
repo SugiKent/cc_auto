@@ -85,12 +85,12 @@ class Transaction < ApplicationRecord
         end
         msg = "[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高：#{jpy_balance}円\nBitcoin：#{balance['btc']}"
 
-        line_notify(msg)
+        Line.new.line_notify(msg)
       else
         puts "POSTでの#{order_type}に失敗"
 
         msg = "[#{order_type}]に失敗しました。"
-        line_notify(msg)
+        Line.new.line_notify(msg)
       end
 
     else
@@ -241,15 +241,6 @@ class Transaction < ApplicationRecord
     request_for_get(uri, headers)
   end
 
-  def line_notify(msg)
-    uri = URI.parse("https://notify-api.line.me/api/notify")
-
-    request = make_request(msg)
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |https|
-      https.request(request)
-    end
-  end
-
   private
 
   def http_request(uri, request)
@@ -293,16 +284,6 @@ class Transaction < ApplicationRecord
     headers.merge!({
       "Content-Type" => "application/json"
     })
-  end
-
-  def make_request(msg)
-    token = ENV['LINE_TOKEN']
-    uri = URI.parse("https://notify-api.line.me/api/notify")
-
-    request = Net::HTTP::Post.new(uri)
-    request["Authorization"] = "Bearer #{token}"
-    request.set_form_data(message: msg)
-    request
   end
 
 end
