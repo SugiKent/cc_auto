@@ -67,12 +67,13 @@ class Currency < ApplicationRecord
   end
 
   def notify_lowest_rate(type,rate)
-    msg = "【BOT】#{type}が24時間以内で最低値になりました。\n\n現在のレート：#{rate}円/#{type}\n\ncoincheckのデータより"
+    msg = "【BOT】#{type}が1週間以内で最低値になりました。\n\n現在のレート：#{rate}円/#{type}\n\ncoincheckのデータより"
     Line.new.notify(msg)
+    # Tweet.new.tweet(msg)
   end
 
   def lowest_rate_1day(type)
-    lowest_rate = Currency.where(type: type).where("currencies.created_at > ?", DateTime.now - 1.days).order(:rate).first
+    lowest_rate = Currency.where(type: type).where("currencies.created_at > ?", DateTime.now - 7.days).order(:rate).first
   end
 
 end

@@ -18,9 +18,6 @@ class Line
     response = Net::HTTP.start(@uri.hostname, @uri.port, use_ssl: @uri.scheme == "https") do |https|
       https.request(request)
     end
-
-    # logメッセージ用
-    puts @content
   end
 
   def make_request(msg)
