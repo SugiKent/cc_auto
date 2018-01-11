@@ -26,6 +26,8 @@ class Transaction < ApplicationRecord
     key = ENV['CC_API_KEY']
     secret = ENV['CC_API_SECRET']
 
+    @line = Line.new
+
     # .envのTRANS_ON環境変数で取引するかを切り替える
     trans_on = ENV['TRANS_ON']
     return false unless trans_on == 'go'
@@ -68,14 +70,15 @@ class Transaction < ApplicationRecord
     uri = URI.parse "https://coincheck.com/api/exchange/orders"
     headers = get_signature(uri, key, secret, body.to_json)
     if Rails.env == 'production'
-      puts "POSTでの#{order_type}を開始"
+      @line.update_content("POSTでの#{order_type}を開始")
       post_response = request_for_post(uri, headers, body)
 
       if post_response.code == '200'
         # amountがFloat型のためデータ登録できず
         trans = Transaction.new(type: 0, amount: amount, rate: price, order_type: order_type)
         trans.save
-        puts "POSTでの#{order_type}を完了"
+        @line.update_content("POSTでの#{order_type}を完了")
+
         # 残高を取得
         balance = get_balance
         jpy_balance = if order_type == 'buy'
@@ -83,14 +86,12 @@ class Transaction < ApplicationRecord
         else
           balance['jpy'].to_i + amount*price
         end
-        msg = "[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高：#{jpy_balance}円\nBitcoin：#{balance['btc']}"
+        @line.update_content("[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高：#{jpy_balance}円\nBitcoin：#{balance['btc']}")
 
-        Line.new.line_notify(msg)
+        @line.content_notify
       else
-        puts "POSTでの#{order_type}に失敗"
-
-        msg = "[#{order_type}]に失敗しました。"
-        Line.new.line_notify(msg)
+        @line.update_content("POSTでの#{order_type}に失敗")
+        @line.content_notify
       end
 
     else
@@ -128,9 +129,10 @@ class Transaction < ApplicationRecord
   end
 
   def check_rate
-    puts "\n\n------------------------\n" + Time.zone.now.to_s + "\nTransaction#check_rateを実行"
+    @line.update_content("------------------------\n" + Time.zone.now.to_s + "\nTransaction#check_rateを実行")
+
     past_trans = Transaction.last
-    puts "最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円"
+    @line.update_content("最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円")
 
     if past_trans.order_type == 'buy'
       # 前回は買った = 今回は売る
@@ -138,7 +140,7 @@ class Transaction < ApplicationRecord
       # 現在の売値レート
       now_rate = get_rate('sell')
       now_rate = now_rate['rate'].to_i
-      puts "現在のレートは#{now_rate}円"
+      @line.update_content("現在のレートは#{now_rate}円")
 
       # tickerを取得
       ticker = get_ticker
@@ -147,12 +149,12 @@ class Transaction < ApplicationRecord
       # 24時間以内の最高取引価格-1万円
       # かつ、購入時より高ければ売る
       which = now_rate > past_trans.rate && now_rate > ticker['high'].to_i - 10000
-      puts "24時間以内の最高取引価格：#{ticker['high'].to_i}円"
+      @line.update_content("24時間以内の最高取引価格：#{ticker['high'].to_i}円")
 
       if which
-        puts "【24時間以内の最高取引価格-1万円】かつ、【購入時より高い】ので、売り"
+        @line.update_content("【24時間以内の最高取引価格-1万円】かつ、【購入時より高い】ので、売り")
       else
-        puts "【24時間以内の最高取引価格-1万円】かつ、【購入時より高く】ないので、売らない"
+        @line.update_content("【24時間以内の最高取引価格-1万円】かつ、【購入時より高く】ないので、売らない")
       end
 
       if which
@@ -164,16 +166,16 @@ class Transaction < ApplicationRecord
         # 現在 > 2分前 > 3分前とレートが上昇していたら売らない
         which = !(now_rate > before_2m_rate &&
                 before_2m_rate > before_3m_rate)
-        puts "現在 > 2分前 && 2分前 > 3分前"
-        puts "#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}"
+        @line.update_content("現在 > 2分前 && 2分前 > 3分前")
+        @line.update_content("#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}")
         if which
-          puts "ここ3分間のレートは上がり続けていないので、売り"
+          @line.update_content("ここ3分間のレートは上がり続けていないので、売り")
         else
-          puts "ここ3分間レートが上がり続けているので、売らない"
+          @line.update_content("ここ3分間レートが上がり続けているので、売らない")
         end
       end
 
-      puts "判定の結果：売りは#{which}"
+      @line.update_content("判定の結果：売りは#{which}")
       which
     elsif past_trans.order_type == 'sell'
       # 前回は売った = 今回は買う
@@ -181,51 +183,51 @@ class Transaction < ApplicationRecord
       # 現在の買値レート
       now_rate = get_rate('buy')
       now_rate = now_rate['rate'].to_i
-      puts "現在のレートは#{now_rate}円"
+      @line.update_content("現在のレートは#{now_rate}円")
 
       # tickerを取得
       ticker = get_ticker
-      puts "24時間以内の最安取引価格：#{ticker['low'].to_i}円"
+      @line.update_content("24時間以内の最安取引価格：#{ticker['low'].to_i}円")
 
       # 24時間以内の最安取引価格+1万円以下なら購入
       which = now_rate < ticker['low'].to_i + 10000
 
       if which
-        puts "【24時間以内の最安取引価格+1万円以下】なので購入"
+        @line.update_content("【24時間以内の最安取引価格+1万円以下】なので購入")
       else
-        puts '【24時間以内の最安取引価格+1万円以下】ではないので購入しない'
+        @line.update_content('【24時間以内の最安取引価格+1万円以下】ではないので購入しない')
       end
 
       if which
         last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
         before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
         before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
-        puts '現在 > 2分前 && 2分前 > 3分前'
-        puts "#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}"
+        @line.update_content('現在 > 2分前 && 2分前 > 3分前')
+        @line.update_content("#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}")
 
         # 現在 < 2分前 < 3分前と下落していたら買わない
         which = !(now_rate < before_2m_rate &&
                   before_2m_rate < before_3m_rate)
         if which
-          puts "下落し続けていないので購入"
+          @line.update_content("下落し続けていないので購入")
         else
-          puts "下落し続けているので買わない"
+          @line.update_content("下落し続けているので買わない")
         end
 
         if which
           # 高掴み対策
           # 24時間での最高取引価格-2万円より低いなら買う
           which = now_rate < ticker['high'].to_i - 20000
-          puts "24時間以内の最高値が#{ticker['high'].to_i}円"
+          @line.update_content("24時間以内の最高値が#{ticker['high'].to_i}円")
           if which
-            puts "高掴みではないので、購入"
+            @line.update_content("高掴みではないので、購入")
           else
-            puts "高掴みしそうなので、購入を見送り"
+            @line.update_content("高掴みしそうなので、購入を見送り")
           end
         end
       end
 
-      puts "判定の結果：購入は#{which}"
+      @line.update_content("判定の結果：購入は#{which}")
       which
 
     end
