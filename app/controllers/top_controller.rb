@@ -5,6 +5,7 @@ class TopController < ApplicationController
     if Rails.env == 'development'
       Currency.get_rates
       trans.sell_buy_coin
+      Currency.new.compare_rate
     end
 
     @transactions = JSON.parse(trans.read_transactions.body)

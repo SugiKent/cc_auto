@@ -49,31 +49,43 @@ class Currency < ApplicationRecord
 
   end
 
-  def compare_lowest_rate
+  def compare_rate
     Currency.types.keys.each do |type|
+      # xrpだけをチェックする
+      next unless type == "xrp"
+
       uri = URI.parse "https://coincheck.com/api/rate/#{type}_jpy"
       json = Net::HTTP.get(uri)
       result = JSON.parse(json)
 
       next if result.blank?
 
+      now_rate = result['rate'].to_i
       lowest_rate = lowest_rate_1day(type)
+      highest_rate = highest_rate_1day(type)
 
       # 現在の価格が24時間以内の最低値の場合、trueを返す
-      if result['rate'].to_i < lowest_rate.rate
-        notify_lowest_rate(type,result['rate'].to_i)
+      if now_rate < lowest_rate.rate
+        notify_rate(type, now_rate, '最低値')
+      end
+
+      if now_rate > highest_rate.rate
+        notify_rate(type, now_rate, '最高値')
       end
     end
   end
 
-  def notify_lowest_rate(type,rate)
-    msg = "【BOT】#{type}が24時間以内で最低値になりました。\n\n現在のレート：#{rate}円/#{type}\n\ncoincheckのデータより"
+  def notify_rate(type,rate, word)
+    msg = "【BOT】#{type}が24時間以内で#{word}になりました。\n\n現在のレート：#{rate}円/#{type}\n\ncoincheckのデータより"
     Line.new.notify(msg)
-    # Tweet.new.tweet(msg)
   end
 
   def lowest_rate_1day(type)
     lowest_rate = Currency.where(type: type).where("currencies.created_at > ?", DateTime.now - 1.days).order(:rate).first
+  end
+
+  def highest_rate_1day(type)
+    highest_rate = Currency.where(type: type).where("currencies.created_at > ?", DateTime.now - 1.days).order('rate DESC').first
   end
 
 end
