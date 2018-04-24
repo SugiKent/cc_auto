@@ -243,8 +243,6 @@ class Transaction < ApplicationRecord
     key = ENV['CC_API_KEY']
     secret = ENV['CC_API_SECRET']
 
-    p key + secret
-
     uri = URI.parse "https://coincheck.com/api/exchange/orders/transactions"
     headers = get_signature(uri, key, secret)
     request_for_get(uri, headers)
