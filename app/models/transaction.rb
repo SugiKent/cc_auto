@@ -259,7 +259,6 @@ class Transaction < ApplicationRecord
       h.request(request)
     end
 
-    p '--------------------'
     p Time.now
     p response
     p response.body
@@ -277,6 +276,7 @@ class Transaction < ApplicationRecord
       "ACCESS-NONCE" => nonce,
       "ACCESS-SIGNATURE" => signature
     }
+    p headers
   end
 
   def request_for_get(uri, headers = {})
