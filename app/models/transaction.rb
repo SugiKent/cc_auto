@@ -243,6 +243,9 @@ class Transaction < ApplicationRecord
     key = ENV['CC_API_KEY']
     secret = ENV['CC_API_SECRET']
 
+    p key
+    p secret
+
     uri = URI.parse "https://coincheck.com/api/exchange/orders/transactions"
     headers = get_signature(uri, key, secret)
     request_for_get(uri, headers)
@@ -261,7 +264,6 @@ class Transaction < ApplicationRecord
 
     p Time.now
     p response
-    p response.body
 
     response
 
@@ -276,7 +278,6 @@ class Transaction < ApplicationRecord
       "ACCESS-NONCE" => nonce,
       "ACCESS-SIGNATURE" => signature
     }
-    p headers
   end
 
   def request_for_get(uri, headers = {})
