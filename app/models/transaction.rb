@@ -259,10 +259,10 @@ class Transaction < ApplicationRecord
       h.request(request)
     end
 
-    puts '--------------------'
-    puts Time.now
-    puts response
-    puts response.body
+    p '--------------------'
+    p Time.now
+    p response
+    p response.body
 
     response
 
