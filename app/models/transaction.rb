@@ -36,7 +36,7 @@ class Transaction < ApplicationRecord
     # check_rateの結果がtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
 
-    amount = 0.005
+    amount = 0.007
 
     # 最後の取引が"買い"なら、"売る"
     if Transaction.last.order_type == 'buy'
@@ -242,9 +242,6 @@ class Transaction < ApplicationRecord
   def read_transactions
     key = ENV['CC_API_KEY']
     secret = ENV['CC_API_SECRET']
-
-    p key
-    p secret
 
     uri = URI.parse "https://coincheck.com/api/exchange/orders/transactions"
     headers = get_signature(uri, key, secret)
