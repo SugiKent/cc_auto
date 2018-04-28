@@ -136,14 +136,14 @@ class Transaction < ApplicationRecord
 
     if past_trans.order_type == 'buy'
       # 前回は買った = 今回は売る
-      buy?
+      sell?
     elsif past_trans.order_type == 'sell'
       # 前回は売った = 今回は買う
-      sell?
+      buy?
     end
   end
 
-  def buy?
+  def sell?
     # 現在の売値レート
     now_rate = get_rate('sell')
     now_rate = now_rate['rate'].to_i
@@ -182,11 +182,29 @@ class Transaction < ApplicationRecord
       end
     end
 
+    if which
+      # 上がり続けている時は売らない
+      # 20~35時間前のbitcoin価格を取得
+      last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
+      before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
+      before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
+      # 現在 > 20時間前 > 35時間前とレートが上昇していたら売らない
+      which = !(now_rate > before_20h_rate &&
+              before_20h_rate > before_35h_rate)
+      @line.update_content("現在 > 20時間前 && 20時間前 > 35時間前")
+      @line.update_content("#{now_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
+      if which
+        @line.update_content("ここ35時間のレートは上がり続けていないので、売り")
+      else
+        @line.update_content("ここ35時間レートが上がり続けているので、売らない")
+      end
+    end
+
     @line.update_content("判定の結果：売りは#{which}")
     which
   end
 
-  def sell?
+  def buy?
     # 現在の買値レート
     now_rate = get_rate('buy')
     now_rate = now_rate['rate'].to_i
@@ -220,17 +238,34 @@ class Transaction < ApplicationRecord
       else
         @line.update_content("下落し続けているので買わない")
       end
+    end
 
+    if which
+      last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
+      before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
+      before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
+      @line.update_content('現在 > 20時間前 && 20時間前 > 35時間前')
+      @line.update_content("#{now_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
+
+      # 現在 < 20時間前 < 35時間前と下落していたら買わない
+      which = !(now_rate < before_20h_rate &&
+                before_20h_rate < before_35h_rate)
       if which
-        # 高掴み対策
-        # 24時間での最高取引価格-2万円より低いなら買う
-        which = now_rate < ticker['high'].to_i - 20000
-        @line.update_content("24時間以内の最高値が#{ticker['high'].to_i}円")
-        if which
-          @line.update_content("高掴みではないので、購入")
-        else
-          @line.update_content("高掴みしそうなので、購入を見送り")
-        end
+        @line.update_content("下落し続けていないので購入")
+      else
+        @line.update_content("下落し続けているので買わない")
+      end
+    end
+
+    if which
+      # 高掴み対策
+      # 24時間での最高取引価格-2万円より低いなら買う
+      which = now_rate < ticker['high'].to_i - 20000
+      @line.update_content("24時間以内の最高値が#{ticker['high'].to_i}円")
+      if which
+        @line.update_content("高掴みではないので、購入")
+      else
+        @line.update_content("高掴みしそうなので、購入を見送り")
       end
     end
 
