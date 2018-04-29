@@ -190,13 +190,15 @@ class Transaction < ApplicationRecord
       # 上がり続けている時は売らない
       # 20と35時間前のbitcoin価格を取得
       last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
+      before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
       before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
       # 現在 > 20時間前 > 35時間前とレートが上昇していたら売らない
-      which = !(now_rate > before_20h_rate &&
+      which = !(now_rate > before_10h_rate &&
+              before_10h_rate > before_20h_rate &&
               before_20h_rate > before_35h_rate)
-      @line.update_content("現在 > 20時間前 && 20時間前 > 35時間前")
-      @line.update_content("#{now_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
+      @line.update_content("現在 > 10時間前 && 10時間前 > 20時間前 && 20時間前 > 35時間前")
+      @line.update_content("#{now_rate} > #{before_10h_rate} && #{before_10h_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
       if which
         @line.update_content("ここ35時間のレートは上がり続けていないので、売り")
       else
@@ -248,13 +250,15 @@ class Transaction < ApplicationRecord
 
     if which
       last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
+      before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
       before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
-      @line.update_content('現在 > 20時間前 && 20時間前 > 35時間前')
-      @line.update_content("#{now_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
+      @line.update_content('現在 > 10時間前 && 10時間前 > 20時間前 && 20時間前 > 35時間前')
+      @line.update_content("#{now_rate} > #{before_10h_rate} && #{before_10h_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
 
-      # 現在 < 20時間前 < 35時間前と下落していたら買わない
-      which = !(now_rate < before_20h_rate &&
+      # 現在 < 10時間前 < 20時間前 < 35時間前と下落していたら買わない
+      which = !(now_rate < before_10h_rate &&
+                before_10h_rate < before_20h_rate &&
                 before_20h_rate < before_35h_rate)
       if which
         @line.update_content("下落し続けていないので購入")
