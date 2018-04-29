@@ -183,8 +183,9 @@ class Transaction < ApplicationRecord
     end
 
     if which
+      @line.update_content("20時間前と35時間前のbitcoin価格から判断")
       # 上がり続けている時は売らない
-      # 20~35時間前のbitcoin価格を取得
+      # 20と35時間前のbitcoin価格を取得
       last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
       before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
@@ -197,6 +198,8 @@ class Transaction < ApplicationRecord
         @line.update_content("ここ35時間のレートは上がり続けていないので、売り")
       else
         @line.update_content("ここ35時間レートが上がり続けているので、売らない")
+
+        @line.content_notify
       end
     end
 
