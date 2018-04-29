@@ -73,6 +73,8 @@ class Transaction < ApplicationRecord
       @line.update_content("POSTでの#{order_type}を開始")
       post_response = request_for_post(uri, headers, body)
 
+      p post_response.body
+
       if post_response.code == '200'
         # amountがFloat型のためデータ登録できず
         trans = Transaction.new(type: 0, amount: amount, rate: price, order_type: order_type)
