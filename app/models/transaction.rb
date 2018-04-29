@@ -136,14 +136,15 @@ class Transaction < ApplicationRecord
 
     if past_trans.order_type == 'buy'
       # 前回は買った = 今回は売る
-      sell?
+      sell?(past_trans)
     elsif past_trans.order_type == 'sell'
       # 前回は売った = 今回は買う
       buy?
     end
   end
 
-  def sell?
+  # 引数は買った時の取引データ
+  def sell?(past_trans)
     # 現在の売値レート
     now_rate = get_rate('sell')
     now_rate = now_rate['rate'].to_i
