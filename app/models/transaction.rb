@@ -36,7 +36,7 @@ class Transaction < ApplicationRecord
     # check_rateの結果がtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
 
-    amount = 0.01
+    amount = 0.005
 
     # 最後の取引が"買い"なら、"売る"
     if Transaction.last.order_type == 'buy'
