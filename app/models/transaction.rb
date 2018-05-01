@@ -158,13 +158,12 @@ class Transaction < ApplicationRecord
     # なるべく高い価格で売る
     # 24時間以内の最高取引価格-1万円
     # かつ、購入時より高ければ売る
-    which = now_rate > past_trans.rate && now_rate > ticker['high'].to_i - 10000
-    @line.update_content("24時間以内の最高取引価格：#{ticker['high'].to_i}円")
+    which = now_rate > past_trans.rate
 
     if which
-      @line.update_content("【24時間以内の最高取引価格-1万円】かつ、【購入時より高い】ので、売り")
+      @line.update_content("【購入時より高い】ので、売り")
     else
-      @line.update_content("【24時間以内の最高取引価格-1万円】かつ、【購入時より高く】ないので、売らない")
+      @line.update_content("【購入時より高く】ないので、売らない")
     end
 
     if which
@@ -186,23 +185,22 @@ class Transaction < ApplicationRecord
     end
 
     if which
-      @line.update_content("20時間前と35時間前のbitcoin価格から判断")
+      @line.update_content("10時間前と20時間前のbitcoin価格から判断")
       # 上がり続けている時は売らない
-      # 20と35時間前のbitcoin価格を取得
+      # 10と20時間前のbitcoin価格を取得
       last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
       before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
-      before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
-      # 現在 > 20時間前 > 35時間前とレートが上昇していたら売らない
+      # 現在 > 20時間前とレートが上昇していたら売らない
       which = !(now_rate > before_10h_rate &&
-              before_10h_rate > before_20h_rate &&
-              before_20h_rate > before_35h_rate)
-      @line.update_content("現在 > 10時間前 && 10時間前 > 20時間前 && 20時間前 > 35時間前")
-      @line.update_content("#{now_rate} > #{before_10h_rate} && #{before_10h_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
+              before_10h_rate > before_20h_rate)
+      @line.update_content("現在：#{now_rate}")
+      @line.update_content("10時間前：#{before_10h_rate}")
+      @line.update_content("20時間前：#{before_20h_rate}")
       if which
-        @line.update_content("ここ35時間のレートは上がり続けていないので、売り")
+        @line.update_content("ここ20時間のレートは上がり続けていないので、売り")
       else
-        @line.update_content("ここ35時間レートが上がり続けているので、売らない")
+        @line.update_content("ここ20時間レートが上がり続けているので、売らない")
 
         @line.content_notify
       end
@@ -235,12 +233,16 @@ class Transaction < ApplicationRecord
       last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
       before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
       before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
-      @line.update_content('現在 > 2分前 && 2分前 > 3分前')
-      @line.update_content("#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}")
+      before_4m_rate = Bitcoin.find(last_bitcoin_id - 6).rate
+      @line.update_content("現在：#{now_rate}")
+      @line.update_content("2分前：#{before_2m_rate}")
+      @line.update_content("3分前：#{before_3m_rate}")
+      @line.update_content("4分前：#{before_4m_rate}")
 
       # 現在 < 2分前 < 3分前と下落していたら買わない
       which = !(now_rate < before_2m_rate &&
-                before_2m_rate < before_3m_rate)
+                now_rate < before_3m_rate &&
+                now_rate < before_4m_rate)
       if which
         @line.update_content("下落し続けていないので購入")
       else
@@ -253,8 +255,10 @@ class Transaction < ApplicationRecord
       before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
       before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
-      @line.update_content('現在 > 10時間前 && 10時間前 > 20時間前 && 20時間前 > 35時間前')
-      @line.update_content("#{now_rate} > #{before_10h_rate} && #{before_10h_rate} > #{before_20h_rate} && #{before_20h_rate} > #{before_35h_rate}")
+      @line.update_content("現在：#{now_rate}")
+      @line.update_content("10時間前：#{before_10h_rate}")
+      @line.update_content("20時間前：#{before_20h_rate}")
+      @line.update_content("35時間前：#{before_35h_rate}")
 
       # 現在 < 10時間前 < 20時間前 < 35時間前と下落していたら買わない
       which = !(now_rate < before_10h_rate &&
