@@ -174,9 +174,11 @@ class Transaction < ApplicationRecord
       before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
       # 現在 > 2分前 > 3分前とレートが上昇していたら売らない
       which = !(now_rate > before_2m_rate &&
-              before_2m_rate > before_3m_rate)
-      @line.update_content("現在 > 2分前 && 2分前 > 3分前")
-      @line.update_content("#{now_rate} > #{before_2m_rate} && #{before_2m_rate} > #{before_3m_rate}")
+              now_rate > before_3m_rate)
+      @line.update_content("現在 > 2分前 && 現在 > 3分前")
+      @line.update_content("現在：#{now_rate}")
+      @line.update_content("2分前：#{before_2m_rate}")
+      @line.update_content("3分前：#{before_3m_rate}")
       if which
         @line.update_content("ここ3分間のレートは上がり続けていないので、売り")
       else
@@ -193,7 +195,7 @@ class Transaction < ApplicationRecord
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
       # 現在 > 20時間前とレートが上昇していたら売らない
       which = !(now_rate > before_10h_rate &&
-              before_10h_rate > before_20h_rate)
+              now_rate > before_20h_rate)
       @line.update_content("現在：#{now_rate}")
       @line.update_content("10時間前：#{before_10h_rate}")
       @line.update_content("20時間前：#{before_20h_rate}")
