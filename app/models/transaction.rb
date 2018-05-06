@@ -173,7 +173,7 @@ class Transaction < ApplicationRecord
       before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
       before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
       # 現在 > 2分前 > 3分前とレートが上昇していたら売らない
-      which = !(now_rate > before_2m_rate &&
+      which = !(now_rate > before_2m_rate ||
               now_rate > before_3m_rate)
       @line.update_content("現在 > 2分前 && 現在 > 3分前")
       @line.update_content("現在：#{now_rate}")
@@ -191,11 +191,13 @@ class Transaction < ApplicationRecord
       # 上がり続けている時は売らない
       # 10と20時間前のbitcoin価格を取得
       last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
+      before_1h_rate = Bitcoin.find(last_bitcoin_id - 120).rate
       before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
       # 現在 > 20時間前とレートが上昇していたら売らない
-      which = !(now_rate > before_10h_rate &&
-              now_rate > before_20h_rate)
+      which = !(now_rate > before_1h_rate ||
+                (now_rate > before_10h_rate &&
+                now_rate > before_20h_rate))
       @line.update_content("現在：#{now_rate}")
       @line.update_content("10時間前：#{before_10h_rate}")
       @line.update_content("20時間前：#{before_20h_rate}")
@@ -242,8 +244,8 @@ class Transaction < ApplicationRecord
       @line.update_content("4分前：#{before_4m_rate}")
 
       # 現在 < 2分前 < 3分前と下落していたら買わない
-      which = !(now_rate > before_2m_rate &&
-                now_rate < before_3m_rate &&
+      which = !(now_rate < before_2m_rate ||
+                now_rate < before_3m_rate ||
                 now_rate < before_4m_rate)
       if which
         @line.update_content("下落し続けていないので購入")
@@ -254,21 +256,17 @@ class Transaction < ApplicationRecord
 
     if which
       last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-      before_1h_rate = Bitcoin.find(last_bitcoin_id - 120).rate
+      before_5h_rate = Bitcoin.find(last_bitcoin_id - 600).rate
       before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
       before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
-      before_35h_rate = Bitcoin.find(last_bitcoin_id - 4200).rate
       @line.update_content("現在：#{now_rate}")
-      @line.update_content("1時間前：#{before_1h_rate}")
+      @line.update_content("5時間前：#{before_5h_rate}")
       @line.update_content("10時間前：#{before_10h_rate}")
       @line.update_content("20時間前：#{before_20h_rate}")
-      @line.update_content("35時間前：#{before_35h_rate}")
 
-      # 現在 < 10時間前 < 20時間前 < 35時間前と下落していたら買わない
-      which = !(now_rate > before_1h_rate &&
-                now_rate < before_10h_rate &&
-                before_10h_rate < before_20h_rate &&
-                before_20h_rate < before_35h_rate)
+      which = now_rate > before_5h_rate ||
+              (before_5h_rate > before_10h_rate &&
+              before_10h_rate > before_20h_rate) )
       if which
         @line.update_content("下落し続けていないので購入")
       else
