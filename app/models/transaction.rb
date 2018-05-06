@@ -172,9 +172,9 @@ class Transaction < ApplicationRecord
       last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
       before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
       before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
-      # 現在 > 2分前 > 3分前とレートが上昇していたら売らない
-      which = !(now_rate > before_2m_rate ||
-              now_rate > before_3m_rate)
+      # 現在よりも2,3分前の両方が大きいなら売る
+      which = now_rate < before_2m_rate &&
+              now_rate < before_3m_rate
       @line.update_content("現在 > 2分前 && 現在 > 3分前")
       @line.update_content("現在：#{now_rate}")
       @line.update_content("2分前：#{before_2m_rate}")
@@ -187,24 +187,21 @@ class Transaction < ApplicationRecord
     end
 
     if which
-      @line.update_content("10時間前と20時間前のbitcoin価格から判断")
       # 上がり続けている時は売らない
-      # 10と20時間前のbitcoin価格を取得
       last_bitcoin_id = Bitcoin.where(order_type: 'sell').last.id
-      before_1h_rate = Bitcoin.find(last_bitcoin_id - 120).rate
-      before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
-      before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
-      # 現在 > 20時間前とレートが上昇していたら売らない
-      which = !(now_rate > before_1h_rate ||
-                (now_rate > before_10h_rate &&
-                now_rate > before_20h_rate))
-      @line.update_content("現在：#{now_rate}")
-      @line.update_content("10時間前：#{before_10h_rate}")
-      @line.update_content("20時間前：#{before_20h_rate}")
+
+      # 0~10時間前
+      before_0h_10h = Bitcoin.where(order_type: 'sell', id: [(last_bitcoin_id - 1200)..(last_bitcoin_id)])
+      reg_0_10 = reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))[:slope]
+      @line.update_content("0~10時間前の切片：#{reg_0_10[:intercept]}\n0~10時間前の傾き：#{reg_0_10[:slope]}")
+
+      # 0~10時間の傾きが10%以下なら売る
+      which = reg_0_10[:slope] < 0.1
+
       if which
-        @line.update_content("ここ20時間のレートは上がり続けていないので、売り")
+        @line.update_content("0~10時間の傾きが10%以下なので、売り")
       else
-        @line.update_content("ここ20時間レートが上がり続けているので、売らない")
+        @line.update_content("0~10時間の傾きが10%以上なので、売らない")
 
         @line.content_notify
       end
@@ -256,21 +253,25 @@ class Transaction < ApplicationRecord
 
     if which
       last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
-      before_5h_rate = Bitcoin.find(last_bitcoin_id - 600).rate
-      before_10h_rate = Bitcoin.find(last_bitcoin_id - 1200).rate
-      before_20h_rate = Bitcoin.find(last_bitcoin_id - 2400).rate
-      @line.update_content("現在：#{now_rate}")
-      @line.update_content("5時間前：#{before_5h_rate}")
-      @line.update_content("10時間前：#{before_10h_rate}")
-      @line.update_content("20時間前：#{before_20h_rate}")
 
-      which = now_rate > before_5h_rate ||
-              (before_5h_rate > before_10h_rate &&
-              before_10h_rate > before_20h_rate) )
+      # 0~10時間前
+      before_0h_10h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 1200)..(last_bitcoin_id)])
+      reg_0_10 = reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))[:slope]
+      @line.update_content("0~10時間前の切片：#{reg_0_10[:intercept]}\n0~10時間前の傾き：#{reg_0_10[:slope]}")
+
+      # 0~20時間前
+      before_0h_20h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 2400)..(last_bitcoin_id)])
+      reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))[:slope]
+      @line.update_content("0~20時間前の切片：#{reg_0_20[:intercept]}\n0~20時間前の傾き：#{reg_0_20[:slope]}")
+
+      # 0~10時間前の傾きが0~20時間前の傾きより大きいなら買う
+      # この判別でfalseが出続ける=ずっと買わないので、傾きが逆転した時ということになる
+      which = reg_0_10[:slope] > reg_0_20[:slope]
+
       if which
-        @line.update_content("下落し続けていないので購入")
+        @line.update_content("0~10時間前の傾きが0~20時間前の傾きより大きいので購入")
       else
-        @line.update_content("下落し続けているので買わない")
+        @line.update_content("0~10時間前の傾きが0~20時間前の傾きより小さいので買わない")
       end
     end
 
@@ -298,6 +299,22 @@ class Transaction < ApplicationRecord
     uri = URI.parse "https://coincheck.com/api/exchange/orders/transactions"
     headers = get_signature(uri, key, secret)
     request_for_get(uri, headers)
+  end
+
+  def reg_line(count, y)
+    x_array = [*1..count]
+    sum_x = x_array.inject(0) {|s,a| s += a}
+    sum_y = y.inject(0) {|s,a| s += a}
+
+    sum_xx = x_array.inject(0) {|s,a| s += a*a}
+    sum_xy = x_array.zip(y).inject(0) {|s,a| s += a[0] * a[1]}
+
+    a = sum_xx * sum_y - sum_xy * sum_x
+    a /= (x_array.size * sum_xx - sum_x * sum_x).to_f
+
+    b = x_array.size * sum_xy - sum_x * sum_y
+    b /= (x_array.size * sum_xx - sum_x * sum_y).to_f
+    {intercept: a, slope: b}
   end
 
   private
