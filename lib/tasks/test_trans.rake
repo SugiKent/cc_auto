@@ -98,7 +98,7 @@ task "transaction:test" => :environment do
       which = now.rate > past_rate
 
       # 損切り
-      force_which = now.rate*0.7 < past_rate
+      force_which = now.rate < past_rate*0.7
 
       last_bitcoin_id = Bitcoin.find(now.id-2).id
       if which
