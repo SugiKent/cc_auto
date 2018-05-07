@@ -226,11 +226,7 @@ class Transaction < ApplicationRecord
     ticker = get_ticker
     @line.update_content("24時間以内の最安取引価格：#{ticker['low'].to_i}円")
 
-    if which
-      @line.update_content("【24時間以内の最安取引価格+1万円以下】なので購入")
-    else
-      @line.update_content('【24時間以内の最安取引価格+1万円以下】ではないので購入しない')
-    end
+    which = true
 
     if which
       last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id

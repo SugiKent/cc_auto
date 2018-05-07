@@ -21,10 +21,10 @@ task "transaction:test" => :environment do
 
       before_24h_hiest = before_24h.order('rate ASC').last
 
+      which = true
+
       last_bitcoin_id = Bitcoin.find(now.id-2).id
       if which
-
-        puts '[高掴みではない]クリア'
 
         before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
         before_3m_rate = Bitcoin.find(last_bitcoin_id - 4).rate
