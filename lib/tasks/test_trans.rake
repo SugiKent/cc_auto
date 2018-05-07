@@ -97,6 +97,9 @@ task "transaction:test" => :environment do
       puts "#{now.rate} > #{past_rate}"
       which = now.rate > past_rate
 
+      # 損切り
+      force_which = now.rate*0.7 < past_rate
+
       last_bitcoin_id = Bitcoin.find(now.id-2).id
       if which
         puts '[購入時よりも高い]クリア'
@@ -126,9 +129,9 @@ task "transaction:test" => :environment do
         puts "ここ10時間の判別クリア\n0~10時間の傾き：#{reg_0_10[:slope]}" if which
       end
 
-      puts "判定の結果：売却は#{which}"
+      puts "判定の結果：売却は#{which || force_which}"
 
-      if which
+      if which || force_which
         past_rate = now.rate + 700
         profit += past_rate * 0.02
         count_id += 1

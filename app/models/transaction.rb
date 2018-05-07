@@ -156,9 +156,11 @@ class Transaction < ApplicationRecord
     ticker = get_ticker
 
     # なるべく高い価格で売る
-    # 24時間以内の最高取引価格-1万円
     # かつ、購入時より高ければ売る
     which = now_rate > past_trans.rate
+
+    # 損切り
+    force_which = now_rate*0.7 < past_trans.rate
 
     if which
       @line.update_content("【購入時より高い】ので、売り")
@@ -205,16 +207,18 @@ class Transaction < ApplicationRecord
       which = reg_0_10[:slope] < 0.2 && reg_0_20[:slope] < 0.5
 
       if which
-        @line.update_content("0~10時間の傾きが10%以下なので、売り")
+        @line.update_content("ここ10時間の判別クリア\n0~10時間の傾き：#{reg_0_10[:slope]}")
       else
-        @line.update_content("0~10時間の傾きが10%以上なので、売らない")
+        @line.update_content("ここ10時間の判別アウト\n0~10時間の傾き：#{reg_0_10[:slope]}")
 
         @line.content_notify
       end
     end
 
-    @line.update_content("判定の結果：売りは#{which}")
-    which
+    @line.update_content("損切りで売り") if force_which
+
+    @line.update_content("判定の結果：売りは#{which || force_which}")
+    which || force_which
   end
 
   def buy?
@@ -285,9 +289,9 @@ class Transaction < ApplicationRecord
       # end
 
       if which
-        @line.update_content("0~10時間前の傾きが0~20時間前の傾きより大きいので購入")
+        @line.update_content("ここ20時間の判別クリア")
       else
-        @line.update_content("0~10時間前の傾きが0~20時間前の傾きより小さいので買わない")
+        @line.update_content("ここ20時間の判別アウト")
       end
     end
 
