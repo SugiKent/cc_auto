@@ -15,5 +15,5 @@ every 1.minute do
   custom_runner "Currency.get_rates"
   custom_runner "Bitcoin.get_rate"
   custom_runner "Transaction.new.sell_buy_coin"
-  custom_runner "Currency.new.compare_rate"
+  # custom_runner "Currency.new.compare_rate"
 end
