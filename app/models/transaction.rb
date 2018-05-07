@@ -159,9 +159,6 @@ class Transaction < ApplicationRecord
     # かつ、購入時より高ければ売る
     which = now_rate > past_trans.rate
 
-    # 損切り
-    force_which = now_rate*0.7 < past_trans.rate
-
     if which
       @line.update_content("【購入時より高い】ので、売り")
     else
@@ -215,10 +212,8 @@ class Transaction < ApplicationRecord
       end
     end
 
-    @line.update_content("損切りで売り") if force_which
-
-    @line.update_content("判定の結果：売りは#{which || force_which}")
-    which || force_which
+    @line.update_content("判定の結果：売りは#{which}")
+    which
   end
 
   def buy?
