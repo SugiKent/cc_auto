@@ -19,11 +19,7 @@ task "transaction:test" => :environment do
 
       before_24h = Bitcoin.where(order_type: 'buy', id: [(now.id-2880)..(now.id) ])
 
-      before_24h_lowest = before_24h.order('rate DESC').last
       before_24h_hiest = before_24h.order('rate ASC').last
-
-      # 高掴み対策
-      which = now.rate < before_24h_lowest.rate + 10000
 
       last_bitcoin_id = Bitcoin.find(now.id-2).id
       if which
@@ -63,9 +59,11 @@ task "transaction:test" => :environment do
       end
 
       if which
-        which = now.rate < before_24h_hiest.rate - 20000
+        # 高掴み対策
+        # 24時間での最高取引価格-10万円より低いなら買う
+        which = now.rate < before_24h_hiest.rate - 100000
 
-        puts '24時間の最高値-2万円クリア' if which
+        puts '24時間の最高値-10万円クリア' if which
 
       end
 

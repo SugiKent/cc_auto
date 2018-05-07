@@ -226,9 +226,6 @@ class Transaction < ApplicationRecord
     ticker = get_ticker
     @line.update_content("24時間以内の最安取引価格：#{ticker['low'].to_i}円")
 
-    # 24時間以内の最安取引価格+1万円以下なら購入
-    which = now_rate < ticker['low'].to_i + 10000
-
     if which
       @line.update_content("【24時間以内の最安取引価格+1万円以下】なので購入")
     else
@@ -292,8 +289,8 @@ class Transaction < ApplicationRecord
 
     if which
       # 高掴み対策
-      # 24時間での最高取引価格-2万円より低いなら買う
-      which = now_rate < ticker['high'].to_i - 20000
+      # 24時間での最高取引価格-10万円より低いなら買う
+      which = now_rate < ticker['high'].to_i - 100000
       @line.update_content("24時間以内の最高値が#{ticker['high'].to_i}円")
       if which
         @line.update_content("高掴みではないので、購入")
