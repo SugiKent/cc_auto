@@ -192,11 +192,17 @@ class Transaction < ApplicationRecord
 
       # 0~10時間前
       before_0h_10h = Bitcoin.where(order_type: 'sell', id: [(last_bitcoin_id - 1200)..(last_bitcoin_id)])
-      reg_0_10 = reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))[:slope]
+      reg_0_10 = reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
       @line.update_content("0~10時間前の切片：#{reg_0_10[:intercept]}\n0~10時間前の傾き：#{reg_0_10[:slope]}")
 
+      # 0~20時間前
+      before_0h_20h = Bitcoin.where(order_type: 'sell', id: [(last_bitcoin_id - 2400)..(last_bitcoin_id)])
+      reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
+      @line.update_content("0~10時間前の切片：#{reg_0_20[:intercept]}\n0~10時間前の傾き：#{reg_0_20[:slope]}")
+
       # 0~10時間の傾きが10%以下なら売る
-      which = reg_0_10[:slope] < 0.1
+      # かつ、0~20時間の傾きが50%以下なら売る
+      which = reg_0_10[:slope] < 0.2 && reg_0_20[:slope] < 0.5
 
       if which
         @line.update_content("0~10時間の傾きが10%以下なので、売り")
@@ -254,19 +260,29 @@ class Transaction < ApplicationRecord
     if which
       last_bitcoin_id = Bitcoin.where(order_type: 'buy').last.id
 
+      # 0~1時間前
+      before_0h_1h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 120)..(last_bitcoin_id)])
+      reg_0_1 = reg_line(before_0h_1h.count, before_0h_1h.pluck(:rate))
+      @line.update_content("0~10時間前の切片：#{reg_0_1[:intercept]}\n0~10時間前の傾き：#{reg_0_1[:slope]}")
+
       # 0~10時間前
       before_0h_10h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 1200)..(last_bitcoin_id)])
-      reg_0_10 = reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))[:slope]
+      reg_0_10 = reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
       @line.update_content("0~10時間前の切片：#{reg_0_10[:intercept]}\n0~10時間前の傾き：#{reg_0_10[:slope]}")
 
       # 0~20時間前
       before_0h_20h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 2400)..(last_bitcoin_id)])
-      reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))[:slope]
+      reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
       @line.update_content("0~20時間前の切片：#{reg_0_20[:intercept]}\n0~20時間前の傾き：#{reg_0_20[:slope]}")
 
-      # 0~10時間前の傾きが0~20時間前の傾きより大きいなら買う
-      # この判別でfalseが出続ける=ずっと買わないので、傾きが逆転した時ということになる
-      which = reg_0_10[:slope] > reg_0_20[:slope]
+      # ここ1時間の傾きが-0.1より小さいなら買う
+      # かつ、ここ20時間の傾きが-0.7より大きい時
+      # すなわち、傾きがかなりプラス向きの時
+      which = reg_0_1[:slope] > -0.1 && reg_0_20[:slope] > -0.7
+
+      # if which
+      #   which = reg_0_10[:slope] > reg_0_20[:slope]
+      # end
 
       if which
         @line.update_content("0~10時間前の傾きが0~20時間前の傾きより大きいので購入")
