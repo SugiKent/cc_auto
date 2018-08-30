@@ -28,6 +28,7 @@ class Currency < ApplicationRecord
   def self.get_rates
 
     Currency.types.keys.each do |type|
+      next if type == 'xmr' || type == 'rep' || type = 'zec' || type == 'dash'
       uri = URI.parse "https://coincheck.com/api/rate/#{type}_jpy"
       json = Net::HTTP.get(uri)
       result = JSON.parse(json)
