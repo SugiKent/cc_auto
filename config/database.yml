@@ -14,8 +14,7 @@ default: &default
   encoding: utf8
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   username: root
-  password:
-  socket: /var/run/mysqld/mysqld.sock
+  password: <%= ENV['CC_AUTO_DATABASE_PASSWORD'] %>
 
 development:
   <<: *default
@@ -52,3 +51,4 @@ production:
   database: cc_auto_production
   username: cc_auto
   password: <%= ENV['CC_AUTO_DATABASE_PASSWORD'] %>
+  socket: /var/run/mysqld/mysqld.sock
