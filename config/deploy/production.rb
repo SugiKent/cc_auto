@@ -8,7 +8,7 @@ role :db,  %w{root@203.104.205.78}
 server '203.104.205.78', user: 'root', roles: %w{web app}
 
 set :ssh_options, {
-  keys: %w(/vagrant/cc_auto.pem),
+  keys: %w(~/.ssh/cc_auto.pem),
   forward_agent: false,
   auth_methods: %w(publickey)
 }
