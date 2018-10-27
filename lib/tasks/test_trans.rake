@@ -71,6 +71,7 @@ task "transaction:test" => :environment do
 
       if which
         past_rate = now.rate - 500
+        # TODO: ここの0.02は実際には動的
         profit -= past_rate * 0.02
         count_id += 3
         trans_count += 1

@@ -2,6 +2,8 @@ require 'net/http'
 require 'uri'
 require 'openssl'
 require 'json'
+require 'bigdecimal'
+require 'bigdecimal/util'
 
 class Transaction < ApplicationRecord
   self.inheritance_column = :_type_disabled
@@ -36,7 +38,11 @@ class Transaction < ApplicationRecord
     # check_rateの結果がtrueでない限り、取引を実行せずにreturn falseする
     return false unless check_rate
 
-    amount = 0.019
+    # amountの型がintegerのため少数が入らず
+    amount = '0.019'
+
+    # 残高の取得
+    balance = get_balance
 
     # 最後の取引が"買い"なら、"売る"
     if Transaction.last.order_type == 'buy'
@@ -46,6 +52,8 @@ class Transaction < ApplicationRecord
 
       # 相場より700円あげた指値で売る
       price = rate['rate'].to_i + 700
+      # 持ってるやつ全部売る
+      amount = balance['btc'].to_d
     else
       # 買う場合
       order_type = 'buy'
@@ -53,6 +61,8 @@ class Transaction < ApplicationRecord
 
       # 相場より700円下げた指値で買う
       price = rate['rate'].to_i - 500
+      # 持ってる日本円で変えるだけ
+      amount = balance['jpy'].to_s.to_d / price.to_s.to_d
     end
 
     # order_typeを元にレートを取得
@@ -60,7 +70,7 @@ class Transaction < ApplicationRecord
 
     body = {
       rate: price,
-      amount: amount,
+      amount: amount.to_s,
       order_type: order_type,
       pair: 'btc_jpy',
       market_buy_amount: nil,
@@ -77,16 +87,16 @@ class Transaction < ApplicationRecord
 
       if post_response.code == '200'
         # amountがFloat型のためデータ登録できず
-        trans = Transaction.new(type: 0, amount: amount, rate: price, order_type: order_type)
+        trans = Transaction.new(type: 0, amount: amount.to_d, rate: price, order_type: order_type)
         trans.save
         @line.update_content("POSTでの#{order_type}を完了")
 
         # 残高を取得
         balance = get_balance
         jpy_balance = if order_type == 'buy'
-          balance['jpy'].to_i - amount*price
+          balance['jpy'].to_i - amount.to_d*price
         else
-          balance['jpy'].to_i + amount*price
+          balance['jpy'].to_i + amount.to_d*price
         end
         @line.update_content("[#{order_type}]を完了しました\nレート:#{price}円\n\n------------\n残高：#{jpy_balance}円\nBitcoin：#{balance['btc']}")
 

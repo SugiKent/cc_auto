@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180103162857) do
+ActiveRecord::Schema.define(version: 20181027145753) do
 
   create_table "bitcoins", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.integer "rate"
@@ -28,7 +28,7 @@ ActiveRecord::Schema.define(version: 20180103162857) do
 
   create_table "transactions", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.integer "type", null: false
-    t.integer "amount", null: false
+    t.string "amount", null: false
     t.integer "rate", null: false
     t.string "order_type", null: false
     t.datetime "created_at", null: false
