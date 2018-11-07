@@ -14,10 +14,12 @@ class Line
   end
 
   def content_notify
+    puts 'LINE送信-content_notify'
     request = make_request(@content)
     response = Net::HTTP.start(@uri.hostname, @uri.port, use_ssl: @uri.scheme == "https") do |https|
       https.request(request)
     end
+    p response
   end
 
   def make_request(msg)
