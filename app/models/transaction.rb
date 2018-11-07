@@ -230,8 +230,11 @@ class Transaction < ApplicationRecord
     end
 
     @line.update_content("判定の結果：売りは#{which}")
-    @line.content_notify
-    @line.reset_content
+
+    if which || DateTime.now.minute % 12 == 0
+      @line.content_notify
+      @line.reset_content
+    end
     which
   end
 
@@ -315,8 +318,10 @@ class Transaction < ApplicationRecord
     end
 
     @line.update_content("判定の結果：購入は#{which}")
-    @line.content_notify
-    @line.reset_content
+    if which || DateTime.now.minute % 12 == 0
+      @line.content_notify
+      @line.reset_content
+    end
     which
   end
 
