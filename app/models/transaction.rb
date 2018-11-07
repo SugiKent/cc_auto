@@ -43,9 +43,11 @@ class Transaction < ApplicationRecord
 
     # 残高の取得
     balance = get_balance
+    puts "バランスの取得#{balance['btc']}"
 
     # 最後の取引が"買い"なら、"売る"
     if Transaction.last.order_type == 'buy'
+      puts '売ります'
       # 売る場合
       order_type = 'sell'
       rate = get_rate(order_type)
@@ -55,6 +57,7 @@ class Transaction < ApplicationRecord
       # 持ってるやつ全部売る
       amount = balance['btc'].to_d
     else
+      puts '買います'
       # 買う場合
       order_type = 'buy'
       rate = get_rate(order_type)
@@ -83,9 +86,11 @@ class Transaction < ApplicationRecord
       @line.update_content("POSTでの#{order_type}を開始")
       post_response = request_for_post(uri, headers, body)
 
+      puts '売買のPOSTします'
       p post_response.body
 
       if post_response.code == '200'
+        puts '売買のPOSTの結果は200でした'
         # amountがFloat型のためデータ登録できず
         trans = Transaction.new(type: 0, amount: amount.to_d, rate: price, order_type: order_type)
         trans.save
@@ -113,11 +118,12 @@ class Transaction < ApplicationRecord
   end
 
   def get_rate(order_type)
+    puts 'btc_jpyのrateを取得します'
     # 1BTC当たりのorder_typeのレートを取得する
     uri = URI.parse "https://coincheck.com/api/exchange/orders/rate?order_type=#{order_type}&pair=btc_jpy&amount=1"
     json = Net::HTTP.get(uri)
     result = JSON.parse(json)
-
+    p result
     result
   end
 
@@ -147,9 +153,11 @@ class Transaction < ApplicationRecord
     @line.update_content("最後の取引が[#{past_trans.order_type}]で、レートは#{past_trans.rate}円")
 
     if past_trans.order_type == 'buy'
+      puts 'sell?の実行開始'
       # 前回は買った = 今回は売る
       sell?(past_trans)
     elsif past_trans.order_type == 'sell'
+      puts 'buy?の実行開始'
       # 前回は売った = 今回は買う
       buy?
     end
@@ -218,11 +226,12 @@ class Transaction < ApplicationRecord
       else
         @line.update_content("ここ10時間の判別アウト\n0~10時間の傾き：#{reg_0_10[:slope]}")
 
-        @line.content_notify
       end
     end
 
     @line.update_content("判定の結果：売りは#{which}")
+    @line.content_notify
+    @line.reset_content
     which
   end
 
@@ -306,6 +315,8 @@ class Transaction < ApplicationRecord
     end
 
     @line.update_content("判定の結果：購入は#{which}")
+    @line.content_notify
+    @line.reset_content
     which
   end
 

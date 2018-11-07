@@ -32,4 +32,8 @@ class Line
     @content = @content + "\n" + msg
   end
 
+  def reset_content
+    @content = ''
+  end
+
 end
