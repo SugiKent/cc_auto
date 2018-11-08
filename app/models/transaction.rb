@@ -232,7 +232,7 @@ class Transaction < ApplicationRecord
 
     @line.update_content("\n判定の結果：売りは#{which}")
 
-    if which || DateTime.now.hour % 10 == 0
+    if which || (DateTime.now.hour % 10 == 0 && DateTime.now.minute == 0)
       @line.content_notify
       @line.reset_content
     end
@@ -311,7 +311,7 @@ class Transaction < ApplicationRecord
     end
 
     @line.update_content("\n判定の結果：購入は#{which}")
-    if which || DateTime.now.hour % 10 == 0
+    if which || (DateTime.now.hour % 10 == 0 && DateTime.now.minute == 0)
       @line.content_notify
       @line.reset_content
     end
