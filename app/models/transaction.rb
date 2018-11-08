@@ -231,7 +231,7 @@ class Transaction < ApplicationRecord
 
     @line.update_content("判定の結果：売りは#{which}")
 
-    if which || DateTime.now.minute % 12 == 0
+    if which || DateTime.now.hour % 10 == 0
       @line.content_notify
       @line.reset_content
     end
@@ -260,12 +260,12 @@ class Transaction < ApplicationRecord
       @line.update_content("3分前：#{before_3m_rate}")
       @line.update_content("4分前：#{before_4m_rate}")
 
-      # 現在 < 2分前 < 3分前と下落していたら買わない
+      @line.update_content("\n現在よりも[2,3,4分前]のいずれか高かったら買わない")
       which = !(now_rate < before_2m_rate ||
                 now_rate < before_3m_rate ||
                 now_rate < before_4m_rate)
       if which
-        @line.update_content("下落し続けていないので購入")
+        @line.update_content("下落し続けているわけではないので購入"
       else
         @line.update_content("下落し続けているので買わない")
       end
@@ -277,12 +277,7 @@ class Transaction < ApplicationRecord
       # 0~1時間前
       before_0h_1h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 120)..(last_bitcoin_id)])
       reg_0_1 = reg_line(before_0h_1h.count, before_0h_1h.pluck(:rate))
-      @line.update_content("0~10時間前の切片：#{reg_0_1[:intercept]}\n0~10時間前の傾き：#{reg_0_1[:slope]}")
-
-      # 0~10時間前
-      before_0h_10h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 1200)..(last_bitcoin_id)])
-      reg_0_10 = reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
-      @line.update_content("0~10時間前の切片：#{reg_0_10[:intercept]}\n0~10時間前の傾き：#{reg_0_10[:slope]}")
+      @line.update_content("\n0~1時間前の切片：#{reg_0_1[:intercept]}\n0~1時間前の傾き：#{reg_0_1[:slope]}")
 
       # 0~20時間前
       before_0h_20h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 2400)..(last_bitcoin_id)])
@@ -292,11 +287,8 @@ class Transaction < ApplicationRecord
       # ここ1時間の傾きが-0.1より小さいなら買う
       # かつ、ここ20時間の傾きが-0.7より大きい時
       # すなわち、傾きがかなりプラス向きの時
-      which = reg_0_1[:slope] > -0.1 && reg_0_20[:slope] > -0.7
-
-      # if which
-      #   which = reg_0_10[:slope] > reg_0_20[:slope]
-      # end
+      @line.update_content("0~1時間前の傾き < -0.1 && 0~20時間前の傾き > -0.7\n傾きがプラス向き=上昇傾向なら購入")
+      which = reg_0_1[:slope] < -0.1 && reg_0_20[:slope] > -0.7
 
       if which
         @line.update_content("ここ20時間の判別クリア")
@@ -309,7 +301,7 @@ class Transaction < ApplicationRecord
       # 高掴み対策
       # 24時間での最高取引価格-1万円より低いなら買う
       which = now_rate < ticker['high'].to_i - 50000
-      @line.update_content("24時間での最高取引価格-5万円より低いなら買う\n24時間以内の最高値が#{ticker['high'].to_i}円")
+      @line.update_content("\n24時間での最高取引価格-5万円より低いなら買う\n24時間以内の最高値が#{ticker['high'].to_i}円")
       if which
         @line.update_content("高掴みではないので、購入")
       else
@@ -317,8 +309,8 @@ class Transaction < ApplicationRecord
       end
     end
 
-    @line.update_content("判定の結果：購入は#{which}")
-    if which || DateTime.now.minute % 12 == 0
+    @line.update_content("\n判定の結果：購入は#{which}")
+    if which || DateTime.now.hour % 10 == 0
       @line.content_notify
       @line.reset_content
     end
