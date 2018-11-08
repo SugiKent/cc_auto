@@ -266,7 +266,7 @@ class Transaction < ApplicationRecord
                 now_rate < before_3m_rate ||
                 now_rate < before_4m_rate)
       if which
-        @line.update_content("下落し続けているわけではないので購入"
+        @line.update_content("下落し続けているわけではないので購入")
       else
         @line.update_content("下落し続けているので買わない")
       end
