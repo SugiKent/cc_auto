@@ -50,9 +50,9 @@ task "transaction:test" => :environment do
         # 傾きがかなりプラス向きの時
         which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.002 && reg_0_40[:slope] > 0.001
 
-        puts "0~1時間前の切片：#{reg_0_1[:intercept]}\n0~1時間前の傾き：#{reg_0_1[:slope]}"
-        puts "0~20時間前の切片：#{reg_0_20[:intercept]}\n0~20時間前の傾き：#{reg_0_20[:slope]}"
-        puts "0~20時間前の切片：#{reg_0_40[:intercept]}\n0~20時間前の傾き：#{reg_0_40[:slope]}"
+        puts "\n0~1時間前の傾き：#{reg_0_1[:slope]}"
+        puts "\n0~20時間前の傾き：#{reg_0_20[:slope]}"
+        puts "\n0~20時間前の傾き：#{reg_0_40[:slope]}"
 
         puts 'ここ20時間の判別クリア' if which
       end
@@ -121,7 +121,7 @@ task "transaction:test" => :environment do
         reg_0_10 = @t.reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
         reg_0_20 = @t.reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
 
-        which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.005
+        which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.05
 
         puts "0~10時間前の傾き：#{reg_0_10[:slope]}"
         puts "0~20時間前の傾き：#{reg_0_20[:slope]}"
