@@ -95,4 +95,4 @@ class Currency < ApplicationRecord
     currencies.delete_all
   end
 
-eend
+end
