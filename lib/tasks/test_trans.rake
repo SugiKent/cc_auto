@@ -7,11 +7,12 @@ task "transaction:test" => :environment do
   file_name = './log/' + "test_trans_#{Time.now.strftime("%Y%m%d")}_#{Time.now.strftime("%H%M%S")}.csv"
 
   all_count = Bitcoin.count
-  count_id = 80001
+  # count_id = 80001
+  count_id = 250001
   order_price = 0
   trans_count = 0
-  yen = 30000
-  bitcoin = 0
+  yen = '30000'
+  bitcoin = '0'
   order_type = 'buy'
 
   while count_id < all_count
@@ -43,24 +44,20 @@ task "transaction:test" => :environment do
         @t = Transaction.new
 
         reg_0_1 = @t.reg_line(before_0h_1h.count, before_0h_1h.pluck(:rate))
-        reg_0_10 = @t.reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
         reg_0_20 = @t.reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
 
-        # ここ1時間の傾きが-0.1より小さいなら買う
-        # かつ、ここ20時間の傾きが-0.7より大きい時
-        # すなわち、傾きがかなりプラス向きの時
-        which = reg_0_1[:slope] > 0.01 && reg_0_20[:slope] > 5
+        # 傾きがかなりプラス向きの時
+        which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.001
 
-        # if which
-        #   which = reg_0_10[:slope] > reg_0_20[:slope]
-        # end
+        puts "0~1時間前の切片：#{reg_0_1[:intercept]}\n0~1時間前の傾き：#{reg_0_1[:slope]}"
+        puts "0~20時間前の切片：#{reg_0_20[:intercept]}\n0~20時間前の傾き：#{reg_0_20[:slope]}"
 
         puts 'ここ20時間の判別クリア' if which
       end
 
       if which
         # 高掴み対策
-        # 24時間での最高取引価格-10万円より低いなら買う
+        # 24時間での最高取引価格-5万円より低いなら買う
         before_24h = Bitcoin.where(order_type: 'buy', id: [(now.id-2880)..(now.id) ])
         before_24h_hiest = before_24h.order('rate ASC').last
         which = now.rate < before_24h_hiest.rate - 50000
@@ -74,9 +71,9 @@ task "transaction:test" => :environment do
       if which
         order_price = now.rate - 500
 
-        amount = yen / order_price
-        bitcoin = amount
-        yen = 0
+        amount = yen.to_s.to_d / order_price.to_s.to_d
+        bitcoin = amount.to_s
+        yen = '0'
         count_id += 3
         trans_count += 1
 
@@ -122,9 +119,10 @@ task "transaction:test" => :environment do
         reg_0_10 = @t.reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
         reg_0_20 = @t.reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
 
-        # 0~10時間の傾きが10%以下なら売る
-        # かつ、0~20時間の傾きが50%以下なら売る
-        which = reg_0_10[:slope] < 0.2 && reg_0_20[:slope] < 0.5
+        which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.005
+
+        puts "0~10時間前の傾き：#{reg_0_10[:slope]}"
+        puts "0~20時間前の傾き：#{reg_0_20[:slope]}"
 
         puts "ここ10時間の判別クリア\n0~10時間の傾き：#{reg_0_10[:slope]}" if which
       end
@@ -132,10 +130,9 @@ task "transaction:test" => :environment do
       puts "判定の結果：売却は#{which}"
 
       if which
-        order_price = now.rate + 700
-        bitcoin = 0
-        yen = bitcoin * order_price
-        profit += past_rate * 0.02
+        order_price = now.rate.to_s.to_d + 700
+        yen = bitcoin.to_s.to_d * order_price.to_s.to_d
+        bitcoin = '0'
         count_id += 1
         trans_count += 1
 
@@ -153,7 +150,7 @@ task "transaction:test" => :environment do
       end
     end
 
-    puts "\n日時：#{now.created_at}\n日本円：#{yen}\ncount_id：#{count_id}\n取引回数：#{trans_count}回"
+    puts "\n日時：#{now.created_at}\n日本円：#{yen}\nBitcoin：#{bitcoin}\ncount_id：#{count_id}\n取引回数：#{trans_count}回"
     puts "****************************************"
 
   end
