@@ -116,22 +116,25 @@ task "transaction:test" => :environment do
         before_0h_10h = Bitcoin.where(order_type: 'sell', id: [(last_bitcoin_id - 1200)..(last_bitcoin_id)])
         # 0~20時間前
         before_0h_20h = Bitcoin.where(order_type: 'sell', id: [(last_bitcoin_id - 2400)..(last_bitcoin_id)])
+        # 0~40時間前
+        before_0h_40h = Bitcoin.where(order_type: 'sell', id: [(last_bitcoin_id - 4800)..(last_bitcoin_id)])
 
         @t = Transaction.new
         reg_0_10 = @t.reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
         reg_0_20 = @t.reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
-
-        which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.0001
+        reg_0_40 = @t.reg_line(before_0h_40h.count, before_0h_40h.pluck(:rate))
+        which = reg_0_10[:slope] < 0.0001 && reg_0_20[:slope] < 0.0001 && reg_0_40[:slope] < 0.001
 
         puts "0~10時間前の傾き：#{reg_0_10[:slope]}"
         puts "0~20時間前の傾き：#{reg_0_20[:slope]}"
+        puts "0~40時間前の傾き：#{reg_0_40[:slope]}"
 
-        puts "ここ10時間の判別クリア\n0~10時間の傾き：#{reg_0_10[:slope]}" if which
+        puts "ここ40時間の判別クリア" if which
       end
 
       # 損切り
       unless which
-        which = now.rate.to_s.to_d < Transaction.last.rate.to_s.to_d - 100000
+        which = now.rate.to_s.to_d < order_price.to_s.to_d - 100000
         puts "現在のレートが最後の取引から10万円落ちていたら損切り"
       end
 

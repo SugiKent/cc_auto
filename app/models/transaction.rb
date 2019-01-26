@@ -214,13 +214,18 @@ class Transaction < ApplicationRecord
       reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
       @line.update_content("0~20時間前の傾き：#{reg_0_20[:slope]}")
 
-      @line.update_content("0~10時間の傾きが0以下なら売る\nかつ、0~20時間の傾きが0.0001以下なら売る")
-      which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.0001
+      # 0~20時間前
+      before_0h_40h = Bitcoin.where(order_type: 'sell', id: [(last_bitcoin_id - 4800)..(last_bitcoin_id)])
+      reg_0_40 = reg_line(before_0h_40h.count, before_0h_40h.pluck(:rate))
+      @line.update_content("0~40時間前の傾き：#{reg_0_40[:slope]}")
+
+      @line.update_content("0~10時間の傾きが0.0001以下なら売る\nかつ、0~20時間の傾きが0.0001\nかつ、0~40時間の傾きが0.001以下なら売る")
+      which = reg_0_10[:slope] < 0.0001 && reg_0_20[:slope] < 0.0001 && reg_0_40[:slope] < 0.001
 
       if which
-        @line.update_content("ここ10時間の判別クリア")
+        @line.update_content("ここ40時間の判別クリア")
       else
-        @line.update_content("ここ10時間の判別アウト")
+        @line.update_content("ここ40時間の判別アウト")
 
       end
     end
