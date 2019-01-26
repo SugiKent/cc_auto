@@ -90,4 +90,9 @@ class Currency < ApplicationRecord
     highest_rate = Currency.where(type: type).where("currencies.created_at > ?", DateTime.now - 1.days).order('rate DESC').first
   end
 
-end
+  def self.destroy_all_data
+    currencies = Currency.where('created_at < ?', Time.new.ago(6.months))
+    currencies.delete_all
+  end
+
+eend

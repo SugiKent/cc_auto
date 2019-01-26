@@ -4,7 +4,7 @@ class TopController < ApplicationController
     trans = Transaction.new
     if Rails.env == 'development'
       Currency.get_rates
-      trans.sell_buy_coin
+      # trans.sell_buy_coin
       Currency.new.compare_rate
     end
 

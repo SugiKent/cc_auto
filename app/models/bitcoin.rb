@@ -9,4 +9,9 @@ class Bitcoin < ApplicationRecord
     end
   end
 
+  def self.destroy_all_data
+    bitcoins = Bitcoin.where('created_at < ?', Time.new.ago(6.months))
+    bitcoins.delete_all
+  end
+
 end

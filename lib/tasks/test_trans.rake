@@ -8,22 +8,22 @@ task "transaction:test" => :environment do
 
   all_count = Bitcoin.count
   count_id = 80001
-  past_rate = 0
+  order_price = 0
   trans_count = 0
-  profit = 0
+  yen = 30000
+  bitcoin = 0
   order_type = 'buy'
 
   while count_id < all_count
     if order_type == 'buy'
+      # 購入の場合のロジックテスト
       now = Bitcoin.find(count_id)
-
-      before_24h = Bitcoin.where(order_type: 'buy', id: [(now.id-2880)..(now.id) ])
-
-      before_24h_hiest = before_24h.order('rate ASC').last
 
       which = true
 
       last_bitcoin_id = Bitcoin.find(now.id-2).id
+
+      # 現在よりも[2,3,4分前]のいずれか高かったら買わない
       if which
 
         before_2m_rate = Bitcoin.find(last_bitcoin_id - 2).rate
@@ -49,7 +49,7 @@ task "transaction:test" => :environment do
         # ここ1時間の傾きが-0.1より小さいなら買う
         # かつ、ここ20時間の傾きが-0.7より大きい時
         # すなわち、傾きがかなりプラス向きの時
-        which = reg_0_1[:slope] > -0.1 && reg_0_20[:slope] > -0.7
+        which = reg_0_1[:slope] > 0.01 && reg_0_20[:slope] > 5
 
         # if which
         #   which = reg_0_10[:slope] > reg_0_20[:slope]
@@ -61,23 +61,27 @@ task "transaction:test" => :environment do
       if which
         # 高掴み対策
         # 24時間での最高取引価格-10万円より低いなら買う
-        which = now.rate < before_24h_hiest.rate - 100000
+        before_24h = Bitcoin.where(order_type: 'buy', id: [(now.id-2880)..(now.id) ])
+        before_24h_hiest = before_24h.order('rate ASC').last
+        which = now.rate < before_24h_hiest.rate - 50000
 
-        puts '24時間の最高値-10万円クリア' if which
+        puts '24時間の最高値-5万円クリア' if which
 
       end
 
       puts "判定の結果：購入は#{which}"
 
       if which
-        past_rate = now.rate - 500
-        # TODO: ここの0.02は実際には動的
-        profit -= past_rate * 0.02
+        order_price = now.rate - 500
+
+        amount = yen / order_price
+        bitcoin = amount
+        yen = 0
         count_id += 3
         trans_count += 1
 
         csv_data = CSV.generate do |csv|
-          csv << [count_id, order_type, now.created_at, profit, past_rate, trans_count]
+          csv << [count_id, order_type, now.created_at, bitcoin, yen, order_price, trans_count]
         end
         File.open("#{file_name}", 'a') do |file|
           file.write(csv_data)
@@ -93,8 +97,8 @@ task "transaction:test" => :environment do
 
       now = Bitcoin.find(count_id)
 
-      puts "#{now.rate} > #{past_rate}"
-      which = now.rate > past_rate
+      puts "#{now.rate} > #{order_price}"
+      which = now.rate > order_price
 
       last_bitcoin_id = Bitcoin.find(now.id-2).id
       if which
@@ -128,13 +132,15 @@ task "transaction:test" => :environment do
       puts "判定の結果：売却は#{which}"
 
       if which
-        past_rate = now.rate + 700
+        order_price = now.rate + 700
+        bitcoin = 0
+        yen = bitcoin * order_price
         profit += past_rate * 0.02
         count_id += 1
         trans_count += 1
 
         csv_data = CSV.generate do |csv|
-          csv << [count_id, order_type, now.created_at, profit, past_rate, trans_count]
+          csv << [count_id, order_type, now.created_at, bitcoin, yen, order_price, trans_count]
         end
         File.open("#{file_name}", 'a') do |file|
           file.write(csv_data)
@@ -147,13 +153,13 @@ task "transaction:test" => :environment do
       end
     end
 
-    puts "\n日時：#{now.created_at}\n利益：#{profit}\ncount_id：#{count_id}\n取引回数：#{trans_count}回"
+    puts "\n日時：#{now.created_at}\n日本円：#{yen}\ncount_id：#{count_id}\n取引回数：#{trans_count}回"
     puts "****************************************"
 
   end
 
   puts '----------------------'
-  puts "利益：#{profit}\ncount_id：#{count_id}\n取引回数：#{trans_count}回\n最後の取引レート：#{past_rate}"
+  puts "日本円：#{yen}\ncount_id：#{count_id}\n取引回数：#{trans_count}回\n最後の取引レート：#{order_price}"
   puts '----------------------'
 
 end

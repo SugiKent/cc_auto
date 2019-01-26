@@ -39,7 +39,7 @@ class Transaction < ApplicationRecord
     return false unless check_rate
 
     # amountの型がintegerのため少数が入らず
-    amount = '0.019'
+    amount = ''
 
     # 残高の取得
     balance = get_balance
@@ -62,7 +62,7 @@ class Transaction < ApplicationRecord
       order_type = 'buy'
       rate = get_rate(order_type)
 
-      # 相場より700円下げた指値で買う
+      # 相場より500円下げた指値で買う
       price = rate['rate'].to_i - 500
       # 持ってる日本円で変えるだけ
       amount = balance['jpy'].to_s.to_d / price.to_s.to_d
@@ -80,9 +80,9 @@ class Transaction < ApplicationRecord
       position_id: nil,
     }
 
-    uri = URI.parse "https://coincheck.com/api/exchange/orders"
-    headers = get_signature(uri, key, secret, body.to_json)
     if Rails.env == 'production'
+      uri = URI.parse "https://coincheck.com/api/exchange/orders"
+      headers = get_signature(uri, key, secret, body.to_json)
       @line.update_content("POSTでの#{order_type}を開始")
       post_response = request_for_post(uri, headers, body)
 
@@ -170,9 +170,6 @@ class Transaction < ApplicationRecord
     now_rate = now_rate['rate'].to_i
     @line.update_content("現在のレートは#{now_rate}円")
 
-    # tickerを取得
-    ticker = get_ticker
-
     # なるべく高い価格で売る
     # かつ、購入時より高ければ売る
     which = now_rate > past_trans.rate
@@ -217,8 +214,6 @@ class Transaction < ApplicationRecord
       reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
       @line.update_content("0~20時間前の傾き：#{reg_0_20[:slope]}")
 
-      # 0~10時間の傾きが0.2以下なら売る
-      # かつ、0~20時間の傾きが0.5以下なら売る
       @line.update_content("0~10時間の傾きが0.2以下なら売る\nかつ、0~20時間の傾きが0.5以下なら売る")
       which = reg_0_10[:slope] < 0.2 && reg_0_20[:slope] < 0.5
 
@@ -285,11 +280,9 @@ class Transaction < ApplicationRecord
       reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
       @line.update_content("0~20時間前の切片：#{reg_0_20[:intercept]}\n0~20時間前の傾き：#{reg_0_20[:slope]}")
 
-      # ここ1時間の傾きが-0.1より小さいなら買う
-      # かつ、ここ20時間の傾きが-0.7より大きい時
-      # すなわち、傾きがかなりプラス向きの時
-      @line.update_content("0~1時間前の傾き < -0.1 && 0~20時間前の傾き > -0.7\n傾きがプラス向き=上昇傾向なら購入")
-      which = reg_0_1[:slope] < -0.1 && reg_0_20[:slope] > -0.7
+      # 傾きがかなりプラス向きの時
+      @line.update_content("0~1時間前の傾き > 0.01 && 0~20時間前の傾き > 5\n傾きがプラス向き=上昇傾向なら購入")
+      which = reg_0_1[:slope] > 0.01 && reg_0_20[:slope] > 5
 
       if which
         @line.update_content("ここ20時間の判別クリア")
@@ -300,7 +293,6 @@ class Transaction < ApplicationRecord
 
     if which
       # 高掴み対策
-      # 24時間での最高取引価格-1万円より低いなら買う
       which = now_rate < ticker['high'].to_i - 50000
       @line.update_content("\n24時間での最高取引価格-5万円より低いなら買う\n24時間以内の最高値が#{ticker['high'].to_i}円")
       if which
@@ -389,5 +381,4 @@ class Transaction < ApplicationRecord
       "Content-Type" => "application/json"
     })
   end
-
 end
