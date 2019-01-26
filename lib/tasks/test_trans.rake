@@ -7,8 +7,8 @@ task "transaction:test" => :environment do
   file_name = './log/' + "test_trans_#{Time.now.strftime("%Y%m%d")}_#{Time.now.strftime("%H%M%S")}.csv"
 
   all_count = Bitcoin.count
-  # count_id = 80001
-  count_id = 250001
+  count_id = 80001
+  # count_id = 250001 #4月らへん
   order_price = 0
   trans_count = 0
   yen = '30000'
@@ -48,7 +48,7 @@ task "transaction:test" => :environment do
         reg_0_20 = @t.reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
         reg_0_40 = @t.reg_line(before_0h_40h.count, before_0h_40h.pluck(:rate))
         # 傾きがかなりプラス向きの時
-        which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.002 && reg_0_40[:slope] > 0.001
+        which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.002 && reg_0_40[:slope] > 0.006
 
         puts "\n0~1時間前の傾き：#{reg_0_1[:slope]}"
         puts "\n0~20時間前の傾き：#{reg_0_20[:slope]}"

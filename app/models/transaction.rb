@@ -286,8 +286,8 @@ class Transaction < ApplicationRecord
       @line.update_content("0~40時間前の傾き：#{reg_0_40[:slope]}")
 
       # 傾きがかなりプラス向きの時
-      @line.update_content("0~1時間前の傾き > 0.01 && \n0~20時間前の傾き > 0.002 && \n0~40時間前の傾き > 0.001\n傾きがプラス向き=上昇傾向なら購入")
-      which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.002 && reg_0_40[:slope] > 0.001
+      @line.update_content("0~1時間前の傾き > 0.01 && \n0~20時間前の傾き > 0.002 && \n0~40時間前の傾き > 0.006\n傾きがプラス向き=上昇傾向なら購入")
+      which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.002 && reg_0_40[:slope] > 0.006
 
       if which
         @line.update_content("ここ20時間の判別クリア")
