@@ -273,16 +273,21 @@ class Transaction < ApplicationRecord
       # 0~1時間前
       before_0h_1h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 120)..(last_bitcoin_id)])
       reg_0_1 = reg_line(before_0h_1h.count, before_0h_1h.pluck(:rate))
-      @line.update_content("\n0~1時間前の切片：#{reg_0_1[:intercept]}\n0~1時間前の傾き：#{reg_0_1[:slope]}")
+      @line.update_content("\n0~1時間前の傾き：#{reg_0_1[:slope]}")
 
       # 0~20時間前
       before_0h_20h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 2400)..(last_bitcoin_id)])
       reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
-      @line.update_content("0~20時間前の切片：#{reg_0_20[:intercept]}\n0~20時間前の傾き：#{reg_0_20[:slope]}")
+      @line.update_content("0~20時間前の傾き：#{reg_0_20[:slope]}")
+
+      # 0~40時間前
+      before_0h_40h = Bitcoin.where(order_type: 'buy', id: [(last_bitcoin_id - 4800)..(last_bitcoin_id)])
+      reg_0_40 = reg_line(before_0h_40h.count, before_0h_40h.pluck(:rate))
+      @line.update_content("0~40時間前の傾き：#{reg_0_40[:slope]}")
 
       # 傾きがかなりプラス向きの時
-      @line.update_content("0~1時間前の傾き > 0.01 && 0~20時間前の傾き > 0.001\n傾きがプラス向き=上昇傾向なら購入")
-      which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.001
+      @line.update_content("0~1時間前の傾き > 0.01 && \n0~20時間前の傾き > 0.002 && \n0~40時間前の傾き > 0.001\n傾きがプラス向き=上昇傾向なら購入")
+      which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.002 && reg_0_40[:slope] > 0.001
 
       if which
         @line.update_content("ここ20時間の判別クリア")
