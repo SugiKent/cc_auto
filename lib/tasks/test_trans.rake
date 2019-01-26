@@ -129,6 +129,12 @@ task "transaction:test" => :environment do
         puts "ここ10時間の判別クリア\n0~10時間の傾き：#{reg_0_10[:slope]}" if which
       end
 
+      # 損切り
+      unless which
+        which = now_rate.to_s.to_d < Transaction.last.rate.to_s.to_d - 40000
+        puts "現在のレートが最後の取引から4万円落ちていたら損切り"
+      end
+
       puts "判定の結果：売却は#{which}"
 
       if which
