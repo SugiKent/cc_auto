@@ -121,7 +121,7 @@ task "transaction:test" => :environment do
         reg_0_10 = @t.reg_line(before_0h_10h.count, before_0h_10h.pluck(:rate))
         reg_0_20 = @t.reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
 
-        which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.05
+        which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.0001
 
         puts "0~10時間前の傾き：#{reg_0_10[:slope]}"
         puts "0~20時間前の傾き：#{reg_0_20[:slope]}"

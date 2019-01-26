@@ -214,8 +214,8 @@ class Transaction < ApplicationRecord
       reg_0_20 = reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
       @line.update_content("0~20時間前の傾き：#{reg_0_20[:slope]}")
 
-      @line.update_content("0~10時間の傾きが0以下なら売る\nかつ、0~20時間の傾きが0.05以下なら売る")
-      which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.05
+      @line.update_content("0~10時間の傾きが0以下なら売る\nかつ、0~20時間の傾きが0.0001以下なら売る")
+      which = reg_0_10[:slope] < 0 && reg_0_20[:slope] < 0.0001
 
       if which
         @line.update_content("ここ10時間の判別クリア")
