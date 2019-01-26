@@ -227,8 +227,8 @@ class Transaction < ApplicationRecord
 
     # 損切り
     unless which
-      which = now_rate.to_s.to_d < Transaction.last.rate.to_s.to_d - 40000
-      @line.update_content("現在のレートが最後の取引から4万円落ちていたら損切り")
+      which = now_rate.to_s.to_d < Transaction.last.rate.to_s.to_d - 100000
+      @line.update_content("現在のレートが最後の取引から10万円落ちていたら損切り")
       if which
         @line.update_content("損切りで、売り")
       else
