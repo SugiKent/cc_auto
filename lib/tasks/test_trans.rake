@@ -46,7 +46,7 @@ task "transaction:test" => :environment do
         reg_0_1 = @t.reg_line(before_0h_1h.count, before_0h_1h.pluck(:rate))
         reg_0_20 = @t.reg_line(before_0h_20h.count, before_0h_20h.pluck(:rate))
         # 傾きがかなりプラス向きの時
-        which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.002
+        which = reg_0_1[:slope] > 0.001 && reg_0_20[:slope] > 0.001
 
         puts "\n0~1時間前の傾き：#{reg_0_1[:slope]}"
         puts "\n0~20時間前の傾き：#{reg_0_20[:slope]}"
@@ -59,9 +59,9 @@ task "transaction:test" => :environment do
         # 24時間での最高取引価格-5万円より低いなら買う
         before_24h = Bitcoin.where(order_type: 'buy', id: [(now.id-2880)..(now.id) ])
         before_24h_hiest = before_24h.order('rate ASC').last
-        which = now.rate < before_24h_hiest.rate - 50000
+        which = now.rate < before_24h_hiest.rate - 30000
 
-        puts '24時間の最高値-5万円クリア' if which
+        puts '24時間の最高値-3万円クリア' if which
 
       end
 
